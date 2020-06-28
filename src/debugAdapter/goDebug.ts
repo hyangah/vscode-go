@@ -1599,7 +1599,7 @@ export class GoDebugSession extends LoggingDebugSession {
 		log('EvaluateRequest');
 		const re = new RegExp(/\w+(?=\(.*\))/, 'g');
 		if (re.test(args.expression)) {
-			this.evaluateCallImpl(args).then(out => {
+			this.evaluateCallImpl(args).then((out) => {
 				const state = this.delve.isApiV1 ? <DebuggerState>out : (<CommandOut>out).State;
 				response.body = this.convertDebugVariableToProtocolVariable(state.currentThread.ReturnValues[0]);
 				this.sendResponse(response);
@@ -1627,36 +1627,6 @@ export class GoDebugSession extends LoggingDebugSession {
 				}
 			);
 		}
-	}
-
-	private evaluateCallImpl(args: DebugProtocol.EvaluateArguments): Thenable<DebuggerState | CommandOut> {
-		// default to the topmost stack frame of the current goroutine
-		let goroutineId = -1;
-		let frameId = 0;
-		// args.frameId won't be specified when evaluating global vars
-		if (args.frameId) {
-			[goroutineId, frameId] = this.stackFrameHandles.get(args.frameId);
-		}
-		const scope = {
-			goroutineID: goroutineId,
-			frame: frameId
-		};
-		const evalSymbolArgs = this.delve.isApiV1 ? {
-			symbol: args.expression,
-			scope
-		} : {
-				Expr: args.expression,
-				Scope: scope,
-				Cfg: this.delve.loadConfig,
-				Unsafe: true
-			};
-		const returnValue = this.delve.callPromise<DebuggerState | CommandOut>('Command',
-			[{ name: 'call', returnInfoLoadConfig: this.delve.loadConfig, expr: evalSymbolArgs.Expr, unsafe: false, goroutineID: scope.goroutineID }]).then(val => val,
-				err => {
-					logError('Failed to call function: ', JSON.stringify(evalSymbolArgs.Expr, null, ' '), '\n\rCall error:', err.toString());
-					return Promise.reject(err);
-				});
-		return returnValue;
 	}
 
 	protected setVariableRequest(
@@ -2143,6 +2113,54 @@ export class GoDebugSession extends LoggingDebugSession {
 		}
 
 		return this.delve.callPromise('Command', [{ name: 'continue' }]).then(callback, errorCallback);
+	}
+
+	private evaluateCallImpl(args: DebugProtocol.EvaluateArguments): Thenable<DebuggerState | CommandOut> {
+		// default to the topmost stack frame of the current goroutine
+		let goroutineId = -1;
+		let frameId = 0;
+		// args.frameId won't be specified when evaluating global vars
+		if (args.frameId) {
+			[goroutineId, frameId] = this.stackFrameHandles.get(args.frameId);
+		}
+		const scope = {
+			goroutineID: goroutineId,
+			frame: frameId
+		};
+		const evalSymbolArgs = this.delve.isApiV1
+			? {
+					symbol: args.expression,
+					scope
+			  }
+			: {
+					Expr: args.expression,
+					Scope: scope,
+					Cfg: this.delve.loadConfig,
+					Unsafe: true
+			  };
+		const returnValue = this.delve
+			.callPromise<DebuggerState | CommandOut>('Command', [
+				{
+					name: 'call',
+					returnInfoLoadConfig: this.delve.loadConfig,
+					expr: evalSymbolArgs.Expr,
+					unsafe: false,
+					goroutineID: scope.goroutineID
+				}
+			])
+			.then(
+				(val) => val,
+				(err) => {
+					logError(
+						'Failed to call function: ',
+						JSON.stringify(evalSymbolArgs.Expr, null, ' '),
+						'\n\rCall error:',
+						err.toString()
+					);
+					return Promise.reject(err);
+				}
+			);
+		return returnValue;
 	}
 
 	private evaluateRequestImpl(args: DebugProtocol.EvaluateArguments): Thenable<EvalOut | DebugVariable> {
