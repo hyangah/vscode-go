@@ -6,13 +6,10 @@
 'use strict';
 
 import * as assert from 'assert';
-import fs = require('fs-extra');
 import path = require('path');
-import sinon = require('sinon');
 import vscode = require('vscode');
 import { applyCodeCoverageToAllEditors, coverageFilesForTest, initForTest } from '../../src/goCover';
 import { updateGoVarsFromConfig } from '../../src/goInstallTools';
-import { getCurrentGoPath, getWorkspaceFolderPath } from '../../src/util';
 
 // The ideal test would check that each open editor containing a file with coverage
 // information is displayed correctly. We cannot see the applied decorations, so the
