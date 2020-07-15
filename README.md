@@ -33,7 +33,12 @@ Welcome! Whether you are new to Go or an experienced Go developer, we hope this 
 
 Before you start coding, make sure that you have already installed Go, as explained in the [Go installation guide](https://golang.org/doc/install).
 
+This extension currently supports Go version later than 1.8, but
+we recommend the latest stable version of Go (see Go's [release policy](https://golang.org/doc/devel/release.html#policy).
+
+When this extension fails to find installed Go, it will pop up an error message with the instruction for downloading Go.
 If you are unsure whether you have installed Go, open the Command Palette in VS Code (Ctrl+Shift+P) and run the [`Go: Locate Configured Go Tools`](docs/commands.md#go-locate-configured-go-tools) command. If the `GOROOT` output is empty, you are missing a Go installation. For help installing Go, ask a question on the `#newbies` [Gophers Slack] channel.
+
 
 ### Set up your environment
 
