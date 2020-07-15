@@ -16,6 +16,7 @@ import { toolInstallationEnvironment } from '../../src/goEnv';
 import { installTools } from '../../src/goInstallTools';
 import { allToolsInformation, getTool, getToolAtVersion } from '../../src/goTools';
 import { getBinPath, getGoVersion, rmdirRecursive } from '../../src/util';
+import { correctBinname } from '../../src/utils/goPath';
 
 suite('Installation Tests', function () {
 	// Disable timeout when we are running slow tests.
@@ -86,7 +87,7 @@ suite('Installation Tests', function () {
 		for (const tool of testCases) {
 			checks.push(new Promise<void>(async (resolve) => {
 				// Check that the expect tool has been installed to $GOPATH/bin.
-				const ok = await exists(path.join(tmpToolsGopath, 'bin', tool));
+				const ok = await exists(path.join(tmpToolsGopath, 'bin', correctBinname(tool)));
 				if (!ok) {
 					assert.fail(`expected ${tmpToolsGopath}/bin/${tool}, not found`);
 				}

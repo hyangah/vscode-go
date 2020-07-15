@@ -107,7 +107,7 @@ export function setCurrentGoRoot(goroot: string) {
 	currentGoRoot = goroot;
 }
 
-function correctBinname(toolName: string) {
+export function correctBinname(toolName: string) {
 	if (process.platform === 'win32') {
 		return toolName + '.exe';
 	}
