@@ -216,6 +216,7 @@ export async function installTool(
 		importPath = getImportPathWithVersion(tool, tool.version, goVersion);
 	}
 	args.push(importPath);
+	const toolImportPath = tool.version ? importPath + '@' + tool.version : importPath;
 
 	let output: string;
 	let result: string = '';
@@ -240,12 +241,12 @@ export async function installTool(
 			const outputFile = path.join(destDir, 'bin', process.platform === 'win32' ? `${tool.name}.exe` : tool.name);
 			await execFile(goVersion.binaryPath, ['build', '-o', outputFile, importPath], opts);
 		}
-		const toolImportPath = tool.version ? importPath + '@' + tool.version : importPath;
+
 		const toolInstallPath = getBinPath(tool.name);
 		outputChannel.appendLine(`Installing ${toolImportPath} (${toolInstallPath}) SUCCEEDED`);
 	} catch (e) {
 		outputChannel.appendLine(`Installing ${importPath} FAILED`);
-		result = `failed to install ${tool}: ${e} ${output} `;
+		result = `failed to install ${toolImportPath}: ${e} ${output} `;
 	}
 
 	// Delete the temporary installation directory.
