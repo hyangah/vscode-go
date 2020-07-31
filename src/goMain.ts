@@ -602,7 +602,7 @@ async function suggestUpdates(ctx: vscode.ExtensionContext) {
 				if (prevVersion) {
 					vscode.window
 						.showInformationMessage(
-							'Your Go version is different than before, a few Go tools may need re-compiling',
+							`Your Go version (${currVersionString}) is different than before (${prevVersion}), a few Go tools may need re-compiling`,
 							updateToolsCmdText
 						)
 						.then((selected) => {

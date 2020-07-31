@@ -34,7 +34,7 @@
   "scripts": {
     "vscode:prepublish": "npm run compile",
     "webpack": "webpack --mode development",
-    "webpack-dev": "webpack --mode development --watch",
+    "webpack-dev": "npm run watch && webpack --mode development --watch",
     "test-compile": "tsc -p ./",
     "compile": "webpack --mode production",
     "watch": "tsc -watch -p ./",
@@ -55,7 +55,7 @@
     "tree-kill": "file:third_party/tree-kill",
     "vscode-debugadapter": "^1.40.0",
     "vscode-debugprotocol": "^1.40.0",
-    "vscode-languageclient": "^6.1.3",
+    "vscode-languageclient": "^7.0.0-next.7",
     "web-request": "^1.0.7"
   },
   "devDependencies": {

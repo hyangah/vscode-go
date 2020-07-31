@@ -40,7 +40,7 @@ export class GoRunTestCodeLensProvider extends GoBaseCodeLensProvider {
 			return [];
 		}
 		const pkg = symbols[0];
-		if (!pkg) {
+		if (!pkg || pkg instanceof vscode.SymbolInformation) {
 			return [];
 		}
 		const range = pkg.range;

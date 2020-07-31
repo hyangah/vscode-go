@@ -136,7 +136,7 @@ export async function getTestFunctions(
 		return;
 	}
 	const symbol = symbols[0];
-	if (!symbol) {
+	if (!symbol || symbol instanceof vscode.SymbolInformation) {
 		return;
 	}
 	const children = symbol.children;
@@ -220,7 +220,7 @@ export async function getBenchmarkFunctions(
 		return;
 	}
 	const symbol = symbols[0];
-	if (!symbol) {
+	if (!symbol || symbol instanceof vscode.SymbolInformation) {
 		return;
 	}
 	const children = symbol.children;

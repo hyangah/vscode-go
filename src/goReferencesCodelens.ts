@@ -90,22 +90,26 @@ export class GoReferencesCodeLensProvider extends GoBaseCodeLensProvider {
 		const symbolProvider = new GoDocumentSymbolProvider();
 		const isTestFile = document.fileName.endsWith('_test.go');
 		const symbols = await symbolProvider.provideDocumentSymbols(document, token);
-		return symbols[0].children.filter((symbol) => {
-			if (symbol.kind === vscode.SymbolKind.Interface) {
-				return true;
-			}
-			if (symbol.kind === vscode.SymbolKind.Function) {
-				if (
-					isTestFile &&
-					(symbol.name.startsWith('Test') ||
-						symbol.name.startsWith('Example') ||
-						symbol.name.startsWith('Benchmark'))
-				) {
-					return false;
+		if (symbols[0] instanceof vscode.DocumentSymbol) {
+			return symbols[0].children.filter((symbol) => {
+				if (symbol.kind === vscode.SymbolKind.Interface) {
+					return true;
 				}
-				return true;
-			}
-			return false;
-		});
+				if (symbol.kind === vscode.SymbolKind.Function) {
+					if (
+						isTestFile &&
+						(symbol.name.startsWith('Test') ||
+							symbol.name.startsWith('Example') ||
+							symbol.name.startsWith('Benchmark'))
+					) {
+						return false;
+					}
+					return true;
+				}
+				return false;
+			});
+		} else {
+			return [];
+		}
 	}
 }

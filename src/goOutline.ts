@@ -9,6 +9,7 @@ import cp = require('child_process');
 import vscode = require('vscode');
 import { toolExecutionEnvironment } from './goEnv';
 import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
+import { lspProvideDocumentSymbols } from './goLanguageServer';
 import {
 	getBinPath,
 	getFileArchive,
@@ -198,7 +199,14 @@ export class GoDocumentSymbolProvider implements vscode.DocumentSymbolProvider {
 	public provideDocumentSymbols(
 		document: vscode.TextDocument,
 		token: vscode.CancellationToken
-	): Thenable<vscode.DocumentSymbol[]> {
+	): vscode.ProviderResult<vscode.SymbolInformation[] | vscode.DocumentSymbol[]> {
+		const lspResult = lspProvideDocumentSymbols(document, token);
+		if (lspResult) {
+			console.log(`using LSP`);
+			return lspResult;
+		} else {
+			console.log(`LSP provideDocumentSymbols doesn't exist`);
+		}
 		if (typeof this.includeImports !== 'boolean') {
 			const gotoSymbolConfig = getGoConfig(document.uri)['gotoSymbol'];
 			this.includeImports = gotoSymbolConfig ? gotoSymbolConfig['includeImports'] : false;

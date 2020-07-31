@@ -17,17 +17,21 @@ import vscode = require('vscode');
 import {
 	CloseAction,
 	CompletionItemKind,
+	DocumentSymbolRequest,
 	ErrorAction,
 	ExecuteCommandSignature,
 	HandleDiagnosticsSignature,
 	InitializeError,
-	LanguageClient,
 	Message,
 	ProvideCodeLensesSignature,
 	ProvideCompletionItemsSignature,
 	ProvideDocumentLinksSignature,
 	RevealOutputChannelOn,
+	WorkspaceSymbolRequest,
 } from 'vscode-languageclient';
+import {
+	LanguageClient
+} from 'vscode-languageclient/node';
 import WebRequest = require('web-request');
 import { extensionId } from './const';
 import { GoCodeActionProvider } from './goCodeAction';
@@ -66,6 +70,17 @@ interface LanguageServerConfig {
 	checkForUpdates: boolean;
 }
 
+export function lspProvideDocumentSymbols(document: vscode.TextDocument, token: vscode.CancellationToken) {
+	if (!languageClient) {
+		return;
+	}
+	const docSymbolProvider = languageClient.getFeature(DocumentSymbolRequest.method).getProvider(document);
+	if (!docSymbolProvider) {
+		return;
+	}
+	return docSymbolProvider.provideDocumentSymbols(document, token);
+}
+
 // Global variables used for management of the language client.
 // They are global so that the server can be easily restarted with
 // new configurations.
@@ -94,6 +109,7 @@ let lastUserAction: Date = new Date();
 // startLanguageServerWithFallback starts the language server, if enabled,
 // or falls back to the default language providers.
 export async function startLanguageServerWithFallback(ctx: vscode.ExtensionContext, activation: boolean) {
+	console.log('startLanguageServerWithFallback');
 	const cfg = buildLanguageServerConfig();
 
 	// If the language server is gopls, we enable a few additional features.

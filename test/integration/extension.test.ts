@@ -605,7 +605,8 @@ It returns the number of bytes written and any write error encountered.
 		const document = await vscode.workspace.openTextDocument(uri);
 		const symbolProvider = new GoDocumentSymbolProvider();
 
-		const outlines = await symbolProvider.provideDocumentSymbols(document, dummyCancellationSource.token);
+		const outlines = <vscode.DocumentSymbol[]>(await symbolProvider.provideDocumentSymbols(document, dummyCancellationSource.token));
+
 		const packages = outlines.filter((x) => x.kind === vscode.SymbolKind.Package);
 		const variables = outlines[0].children.filter((x: any) => x.kind === vscode.SymbolKind.Variable);
 		const functions = outlines[0].children.filter((x: any) => x.kind === vscode.SymbolKind.Function);
