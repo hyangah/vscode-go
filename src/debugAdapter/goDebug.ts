@@ -1595,17 +1595,25 @@ export class GoDebugSession extends LoggingDebugSession {
 		log('PauseResponse');
 	}
 
+	// evaluateRequest is used both for the traditional expression evaluation
+	// (https://github.com/go-delve/delve/blob/master/Documentation/cli/expr.md) and
+	// for the 'call' command support.
+	// If the args.expression starts with the 'call' keyword followed by an expression that looks
+	// like a function call, the request is interpreted as a 'call' command request,
+	// and otherwise, interpreted as a usual expression.
 	protected evaluateRequest(response: DebugProtocol.EvaluateResponse, args: DebugProtocol.EvaluateArguments): void {
 		log('EvaluateRequest');
-		const re = new RegExp(/\w+(?=\(.*\))/, 'g');
-		if (re.test(args.expression)) {
-			this.evaluateCallImpl(args).then((out) => {
+		const m = args.expression.match(/^\s*call\s+(\S+(?=\(.*\)))/);
+		if (m && m.length === 2) {
+			this.evaluateCallImpl(args, m[1]).then((out) => {
 				const state = this.delve.isApiV1 ? <DebuggerState>out : (<CommandOut>out).State;
 				response.body = this.convertDebugVariableToProtocolVariable(state.currentThread.ReturnValues[0]);
 				this.sendResponse(response);
 				log('EvaluateCallResponse');
 			}, (err) => {
-				this.sendErrorResponse(response, 2009, 'Unable to complete call: "{e}"', { e: err.toString() });
+				this.sendErrorResponse(response, 2009, 'Unable to complete call: "{e}"', {
+					e: err.toString()
+				}, args.context === 'watch' ? null : ErrorDestination.User);
 			});
 		} else {
 			this.evaluateRequestImpl(args).then(
@@ -1618,18 +1626,12 @@ export class GoDebugSession extends LoggingDebugSession {
 					log('EvaluateResponse');
 				},
 				(err) => {
-					let dest: ErrorDestination;
 					// No need to repeatedly show the error pop-up when expressions
 					// are continiously reevaluated in the Watch panel, which
 					// already displays errors.
-					if (args.context === 'watch') {
-						dest = null;
-					} else {
-						dest = ErrorDestination.User;
-					}
 					this.sendErrorResponse(response, 2009, 'Unable to eval expression: "{e}"', {
 						e: err.toString()
-					}, dest);
+					}, args.context === 'watch' ? null : ErrorDestination.User);
 				}
 			);
 		}
@@ -2121,7 +2123,11 @@ export class GoDebugSession extends LoggingDebugSession {
 		return this.delve.callPromise('Command', [{ name: 'continue' }]).then(callback, errorCallback);
 	}
 
-	private evaluateCallImpl(args: DebugProtocol.EvaluateArguments): Thenable<DebuggerState | CommandOut> {
+	private evaluateCallImpl(args: DebugProtocol.EvaluateArguments,	callExpr: string)
+	: Thenable<DebuggerState | CommandOut> {
+		if (this.delve.isApiV1) {
+			return Promise.reject('"call" command is unsupported for delve API v1');
+		}
 		// default to the topmost stack frame of the current goroutine
 		let goroutineId = -1;
 		let frameId = 0;
@@ -2133,17 +2139,12 @@ export class GoDebugSession extends LoggingDebugSession {
 			goroutineID: goroutineId,
 			frame: frameId
 		};
-		const evalSymbolArgs = this.delve.isApiV1
-			? {
-				symbol: args.expression,
-				scope
-			}
-			: {
-				Expr: args.expression,
-				Scope: scope,
-				Cfg: this.delve.loadConfig,
-				Unsafe: true
-			};
+		const evalSymbolArgs = {
+			Expr: callExpr,
+			Scope: scope,
+			Cfg: this.delve.loadConfig,
+			Unsafe: true
+		};
 		const returnValue = this.delve
 			.callPromise<DebuggerState | CommandOut>('Command', [
 				{
