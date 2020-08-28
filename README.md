@@ -29,11 +29,19 @@ Take a look at the [Changelog](CHANGELOG.md) to learn about new features.
 
 Welcome! Whether you are new to Go or an experienced Go developer, we hope this extension will fit your needs and enhance your development experience.
 
+### Install the extension
+
+If you haven't already done so, install and open [Visual Studio Code](https://code.visualstudio.com). Navigate to the Extensions pane (Ctrl+Shift+X). Search for "Go" and install this extension (the publisher ID is `golang.Go`).
+
 ### Install Go
 
 Before you start coding, make sure that you have already installed Go, as explained in the [Go installation guide](https://golang.org/doc/install).
 
-If you are unsure whether you have installed Go, open the Command Palette in VS Code (Ctrl+Shift+P) and run the [`Go: Locate Configured Go Tools`](docs/commands.md#go-locate-configured-go-tools) command. If the `GOROOT` output is empty, you are missing a Go installation. For help installing Go, ask a question on the `#newbies` [Gophers Slack] channel.
+If the extension could not find the Go command, the extension will pop up an error message with the link to the official Go download page.
+When the extension successfully locates the Go command, it will show the detected Go command's version at the bottom of the window.
+
+If the extension fails to locate the installed Go command, please check if your `PATH` (`Path` on some Windows) environment variable is configured correctly.
+For help installing Go, ask a question on the `#newbies` [Gophers Slack] channel.
 
 ### Set up your environment
 
@@ -49,15 +57,14 @@ Here are some additional resources for learning about how to set up your Go proj
 
 More advanced users may be interested in using different `GOPATH`s or Go versions per-project. You can learn about the different `GOPATH` manipulation options in the [`GOPATH` documentation](docs/gopath.md). Take a look at the other [customization](#customization) options as well.
 
-### Install the extension
-
-If you haven't already done so, install and open [Visual Studio Code](https://code.visualstudio.com). Navigate to the Extensions pane (Ctrl+Shift+X). Search for "Go" and install this extension (the publisher ID is `golang.Go`).
-
 ### Activate the Go extension
 
 To activate the extension, open any directory or workspace containing Go code.
 
 You should immediately see a prompt in the bottom-right corner of your screen titled `Analysis Tools Missing`. This extension relies on a suite of [command-line tools](docs/tools.md), which must be installed separately. Accept the prompt, or use the [`Go: Install/Update Tools`](docs/commands.md#go-installupdate-tools) command to pick which tools you would like to install.
+
+The [`Go: Locate Configured Go Tools`](docs/commands.md#go-locate-configured-go-tools) command shows the tools the extension depend on and their locations.
+It shows important settings such as Go environment variables that affect the tool selection and the go tools' behavior.
 
 If you see an error that looks like `command Go: Install/Update Tools not found`, it means that the extension has failed to activate and register its commands. Please uninstall and then reinstall the extension.
 
@@ -99,7 +106,8 @@ However, you are welcome to use more advanced options like [`staticcheck`](https
 
 ### [GOPATH](docs/gopath.md)
 
-Advanced users may want to set different `GOPATH`s for different projects or install the Go tools to a different `GOPATH`. This is possible and explained in the [`GOPATH documentation`](docs/gopath.md).
+Advanced users may want to set different `GOPATH`s for different projects or install the Go tools to a different `GOPATH` when working in `GOPATH` mode.
+This is possible and explained in the [`GOPATH documentation`](docs/gopath.md). With Go modules, however, separate `GOPATH`s are unnecessary.
 
 ## [Language Server](docs/gopls.md)
 
