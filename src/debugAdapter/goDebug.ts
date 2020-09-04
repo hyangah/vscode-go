@@ -2036,7 +2036,7 @@ export class GoDebugSession extends LoggingDebugSession {
 		} else if (v.kind === GoReflectKind.Ptr) {
 			if (v.children[0].addr === 0) {
 				return {
-					result: 'nil <' + v.type + '>',
+					result: `nil <${v.type}>`,
 					variablesReference: 0
 				};
 			} else if (v.children[0].type === 'void') {
@@ -2045,6 +2045,10 @@ export class GoDebugSession extends LoggingDebugSession {
 					variablesReference: 0
 				};
 			} else {
+				const addrStr = `0x${v.children[0].addr.toString(16)}`;
+				if (!v.children[0].name) {
+					v.children[0].name = v.name ? `*${v.name}` : `*(${addrStr})`;  // dereferenced
+				}
 				if (v.children[0].children.length > 0) {
 					// Generate correct fullyQualified names for variable expressions
 					v.children[0].fullyQualifiedName = v.fullyQualifiedName;
@@ -2053,35 +2057,35 @@ export class GoDebugSession extends LoggingDebugSession {
 					});
 				}
 				return {
-					result: `<${v.type}>(0x${v.children[0].addr.toString(16)})`,
+					result: `<${v.type}>(${addrStr})`,
 					variablesReference: v.children.length > 0 ? this.variableHandles.create(v) : 0
 				};
 			}
 		} else if (v.kind === GoReflectKind.Slice) {
 			if (v.base === 0) {
 				return {
-					result: 'nil <' + v.type + '>',
+					result: `nil <${v.type}>`,
 					variablesReference: 0
 				};
 			}
 			return {
-				result: '<' + v.type + '> (length: ' + v.len + ', cap: ' + v.cap + ')',
+				result: `<${v.type}> (length: ${v.len}, cap: ${v.cap})`,
 				variablesReference: this.variableHandles.create(v)
 			};
 		} else if (v.kind === GoReflectKind.Map) {
 			if (v.base === 0) {
 				return {
-					result: 'nil <' + v.type + '>',
+					result: `nil <${v.type}>`,
 					variablesReference: 0
 				};
 			}
 			return {
-				result: '<' + v.type + '> (length: ' + v.len + ')',
+				result: `<${v.type}> (length: ${v.len})`,
 				variablesReference: this.variableHandles.create(v)
 			};
 		} else if (v.kind === GoReflectKind.Array) {
 			return {
-				result: '<' + v.type + '>',
+				result: `<${v.type}>`,
 				variablesReference: this.variableHandles.create(v)
 			};
 		} else if (v.kind === GoReflectKind.String) {
@@ -2091,7 +2095,7 @@ export class GoDebugSession extends LoggingDebugSession {
 				val += `...+${v.len - byteLength} more`;
 			}
 			return {
-				result: v.unreadable ? '<' + v.unreadable + '>' : '"' + val + '"',
+				result: v.unreadable ? `<${v.unreadable}>` : `"${val}"`,
 				variablesReference: 0
 			};
 		} else if (v.kind === GoReflectKind.Interface) {
@@ -2120,7 +2124,7 @@ export class GoDebugSession extends LoggingDebugSession {
 			return {
 				// TODO(hyangah): v.value will be useless. consider displaying more info from the child.
 				// https://github.com/go-delve/delve/blob/930fa3b/service/api/prettyprint.go#L106-L124
-				result: v.value || `<${v.type}(${child.type})>)`,
+				result: v.unreadable ? `<${v.unreadable}>` : v.value || `<${v.type}(${child.type})>)`,
 				variablesReference: v.children?.length > 0 ? this.variableHandles.create(v) : 0
 			};
 		} else {
@@ -2132,7 +2136,7 @@ export class GoDebugSession extends LoggingDebugSession {
 				});
 			}
 			return {
-				result: v.value || '<' + v.type + '>',
+				result: v.unreadable ? `<${v.unreadable}>` : v.value || `<${v.type}>`,
 				variablesReference: v.children.length > 0 ? this.variableHandles.create(v) : 0
 			};
 		}
