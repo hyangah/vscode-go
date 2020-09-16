@@ -52,15 +52,19 @@ describe('#initGoStatusBar()', function () {
 	});
 });
 
-describe('#setSelectedGo()', async function () {
+describe('#setSelectedGo()', function () {
 	this.timeout(40000);
 	let sandbox: sinon.SinonSandbox | undefined;
 	let goOption: GoEnvironmentOption;
 	let defaultMemento: vscode.Memento;
-	const version = await ourutil.getGoVersion();
-	const defaultGoOption = new GoEnvironmentOption(version.binaryPath, formatGoVersion(version));
+
+	let version: ourutil.GoVersion;
+	let defaultGoOption: GoEnvironmentOption;
 
 	this.beforeAll(async () => {
+		version = await ourutil.getGoVersion();
+		defaultGoOption = new GoEnvironmentOption(version.binaryPath, formatGoVersion(version));
+
 		defaultMemento = getWorkspaceState();
 		setWorkspaceState(new MockMemento());
 		await setSelectedGo(defaultGoOption);
@@ -108,17 +112,24 @@ describe('#setSelectedGo()', async function () {
 	});
 });
 
-describe('#updateGoVarsFromConfig()', async function () {
+describe('#updateGoVarsFromConfig()', function () {
 	this.timeout(10000);
 
+	let defaultGoConfig: vscode.WorkspaceConfiguration;
 	let defaultMemento: vscode.Memento;
 	let tmpRoot: string | undefined;
 	let tmpRootBin: string | undefined;
 	let sandbox: sinon.SinonSandbox | undefined;
-	const version = await ourutil.getGoVersion();
-	const defaultGoOption = new GoEnvironmentOption(version.binaryPath, formatGoVersion(version));
+
+	let version: ourutil.GoVersion;
+	let defaultGoOption: GoEnvironmentOption;
 
 	this.beforeAll(async () => {
+		defaultGoConfig = ourutil.getGoConfig();
+
+		version = await ourutil.getGoVersion();
+		defaultGoOption = new GoEnvironmentOption(version?.binaryPath || '', formatGoVersion(version));
+
 		defaultMemento = getWorkspaceState();
 		setWorkspaceState(new MockMemento());
 		await setSelectedGo(defaultGoOption);
@@ -173,6 +184,14 @@ describe('#updateGoVarsFromConfig()', async function () {
 	});
 
 	it('should recognize the adjusted goroot using go.goroot', async () => {
+		// stub getGoConfig to return "go.goroot": tmpRoot.
+		const getGoConfigStub = sandbox.stub(ourutil, 'getGoConfig').returns({
+			get: (s: string) => {
+				if (s === 'goroot') { return tmpRoot; }
+				return defaultGoConfig.get(s);
+			},
+		} as vscode.WorkspaceConfiguration);
+
 		// adjust the fake go binary's behavior.
 		process.env['FAKEGOROOT'] = tmpRoot;
 		process.env['FAKEGOVERSION'] = 'go version go2.0.0 darwin/amd64';
@@ -188,6 +207,15 @@ describe('#updateGoVarsFromConfig()', async function () {
 	it('should recognize the adjusted goroot using go.alternateTools', async () => {
 		// "go.alternateTools" : {"go": "go3"}
 		fs.copyFileSync(path.join(tmpRootBin, 'go'), path.join(tmpRootBin, 'go3'));
+
+		const getGoConfigStub = sandbox.stub(ourutil, 'getGoConfig').returns({
+			get: (s: string) => {
+				if (s === 'alternateTools') {
+					return { go: path.join(tmpRootBin, 'go3') };
+				}
+				return defaultGoConfig.get(s);
+			},
+		} as vscode.WorkspaceConfiguration);
 
 		process.env['FAKEGOROOT'] = tmpRoot;
 		process.env['FAKEGOVERSION'] = 'go version go3.0.0 darwin/amd64';
