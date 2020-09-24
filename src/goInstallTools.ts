@@ -355,12 +355,18 @@ export function updateGoVarsFromConfig(): Promise<void> {
 			['env', 'GOPATH', 'GOROOT', 'GOPROXY', 'GOBIN', 'GOMODCACHE'],
 			{ env: toolExecutionEnvironment(), cwd: getWorkspaceFolderPath() },
 			(err, stdout, stderr) => {
-			if (err || stderr) {
-				outputChannel.append(`Failed to run '${goRuntimePath} env: ${err}\n${stderr}`);
+			if (err) {
+				outputChannel.append(`Failed to run '${goRuntimePath} env' : ${err}\n${stderr}`);
 				outputChannel.show();
 
 				vscode.window.showErrorMessage(`Failed to run '${goRuntimePath} env. The config change may not be applied correctly.`);
 				return reject();
+			}
+			if (stderr) {
+				// 'go env' may output warnings about potential misconfiguration.
+				// Show the messages to users but keep processing the stdout.
+				outputChannel.append(`'${goRuntimePath} env': ${stderr}`);
+				outputChannel.show();
 			}
 			const envOutput = stdout.split('\n');
 			if (!process.env['GOPATH'] && envOutput[0].trim()) {
