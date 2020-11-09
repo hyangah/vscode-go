@@ -11,6 +11,7 @@ import * as glob from 'glob';
 import { Client, RPCConnection } from 'json-rpc2';
 import * as os from 'os';
 import * as path from 'path';
+import { kill } from 'process';
 import * as util from 'util';
 import {
 	DebugSession,
@@ -283,6 +284,8 @@ interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
 	/** Delve maximum stack trace depth */
 	stackTraceDepth: number;
 
+	console?: string;
+
 	showGlobalVariables?: boolean;
 	packagePathToGoModPathMap: { [key: string]: string };
 
@@ -390,8 +393,12 @@ export class Delve {
 	private localDebugeePath: string | undefined;
 	private debugProcess: ChildProcess;
 	private request: 'attach' | 'launch';
+	private console: string;
+	private processInTerminal: DebugProtocol.RunInTerminalResponse;
 
-	constructor(launchArgs: LaunchRequestArguments | AttachRequestArguments, program: string) {
+	public async init(
+		launchArgs: LaunchRequestArguments | AttachRequestArguments,
+		program: string, parent: GoDebugSession) {
 		this.request = launchArgs.request;
 		this.program = normalizePath(program);
 		this.remotePath = launchArgs.remotePath;
@@ -427,8 +434,10 @@ export class Delve {
 				return;
 			}
 			this.isRemoteDebugging = false;
+			this.console = '';
 			let env: NodeJS.ProcessEnv;
 			if (launchArgs.request === 'launch') {
+				this.console = launchArgs.console || '';
 				let isProgramDirectory = false;
 				// Validations on the program
 				if (!program) {
@@ -609,28 +618,46 @@ export class Delve {
 				}
 			}
 
-			log(`Current working directory: ${dlvCwd}`);
-			log(`Running: ${launchArgs.dlvToolPath} ${dlvArgs.join(' ')}`);
-
-			this.debugProcess = spawn(launchArgs.dlvToolPath, dlvArgs, {
-				cwd: dlvCwd,
-				env
-			});
-
 			function connectClient(port: number, host: string) {
 				// Add a slight delay to avoid issues on Linux with
 				// Delve failing calls made shortly after connection.
 				setTimeout(() => {
 					const client = Client.$create(port, host);
-					client.connectSocket((err, conn) => {
+					const sock = client.connectSocket((err, conn) => {
 						if (err) {
 							return reject(err);
 						}
 						return resolve(conn);
 					});
-					client.on('error', reject);
-				}, 200);
+					client.on('error', (err) => {
+						reject(err);
+					});
+					client.on('close', (err) => {
+						reject(err);
+					});
+				}, 3000);
 			}
+
+			if (this.console === 'integrated' || this.console === 'external') {
+				try {
+					// TODO: processInTerminal is an empty object if this.console === 'external'.
+					// That is a hard problem (https://github.com/microsoft/vscode/issues/16786)
+					this.processInTerminal = await parent.launchDebugger(
+						launchArgs.dlvToolPath, dlvArgs, dlvCwd, env, this.console);
+					serverRunning = true;
+					connectClient(launchArgs.port, launchArgs.host);
+				} catch (err) {
+					reject(err);
+				}
+				return;
+			}
+
+			log(`Current working directory: ${dlvCwd}`);
+			log(`Running: ${launchArgs.dlvToolPath} ${dlvArgs.join(' ')}`);
+			this.debugProcess = spawn(launchArgs.dlvToolPath, dlvArgs, {
+				cwd: dlvCwd,
+				env
+			});
 
 			this.debugProcess.stderr.on('data', (chunk) => {
 				const str = chunk.toString();
@@ -718,8 +745,14 @@ export class Delve {
 	 */
 	public async close(): Promise<void> {
 		const forceCleanup = async () => {
-			log(`killing debugee (pid: ${this.debugProcess.pid})...`);
-			await killProcessTree(this.debugProcess, log);
+			if (this.debugProcess?.pid) {
+				log(`killing debugee (pid: ${this.debugProcess.pid})...`);
+				await killProcessTree(this.debugProcess, log);
+			}
+			if (this.processInTerminal?.body?.processId) {
+				log(`killing debugee in terminal (pid: ${JSON.stringify(this.processInTerminal)})`);
+				kill(this.processInTerminal.body.processId);
+			}
 			await removeFile(this.localDebugeePath);
 		};
 
@@ -804,6 +837,7 @@ export class GoDebugSession extends LoggingDebugSession {
 	private remoteSourcesAndPackages = new RemoteSourcesAndPackages();
 	private localToRemotePathMapping = new Map<string, string>();
 	private remoteToLocalPathMapping = new Map<string, string>();
+	private initArgs: DebugProtocol.InitializeRequestArguments;
 
 	private showGlobalVariables: boolean = false;
 
@@ -823,6 +857,37 @@ export class GoDebugSession extends LoggingDebugSession {
 		this.stackFrameHandles = new Handles<[number, number]>();
 	}
 
+	public launchDebugger(
+		cmd: string, args: string[], cwd: string, env: any, consoleKind: 'integrated'|'external')
+		: Promise<DebugProtocol.RunInTerminalResponse> {
+		if (!this.initArgs.supportsRunInTerminalRequest) {
+			throw new Error('runInTerminal is not supported');
+		}
+		return new Promise((resolve, reject) => {
+			try {
+				this.runInTerminalRequest({
+					kind: consoleKind,
+					title: 'delve debugger',
+					cwd,
+					args: [cmd, ...args],
+					// XXX TODO: if env has many entries, runInTerminal fails to run the command (too long `env` command).
+					// env,
+				}, 60000, (response: DebugProtocol.Response) => {
+					console.log(`${JSON.stringify(response)} ${(new Date()).toLocaleTimeString()}`);
+					if (response?.success) {
+						resolve(response as DebugProtocol.RunInTerminalResponse);
+					} else {
+						reject(`Failed to launch: ${response?.message}`);
+					}
+				});
+			} catch (e) {
+				console.log(`RunInTerminal rejected ${(new Date()).toLocaleTimeString()}`);
+				reject(e);
+			}
+		});
+
+	}
+
 	protected initializeRequest(
 		response: DebugProtocol.InitializeResponse,
 		args: DebugProtocol.InitializeRequestArguments
@@ -833,6 +898,7 @@ export class GoDebugSession extends LoggingDebugSession {
 		response.body.supportsConfigurationDoneRequest = true;
 		response.body.supportsSetVariable = true;
 		this.sendResponse(response);
+		this.initArgs = args;
 		log('InitializeResponse');
 	}
 
@@ -1744,7 +1810,7 @@ export class GoDebugSession extends LoggingDebugSession {
 	}
 
 	// contains common code for launch and attach debugging initialization
-	private initLaunchAttachRequest(
+	private async initLaunchAttachRequest(
 		response: DebugProtocol.LaunchResponse,
 		args: LaunchRequestArguments | AttachRequestArguments
 	) {
@@ -1808,7 +1874,9 @@ export class GoDebugSession extends LoggingDebugSession {
 		}
 
 		// Launch the Delve debugger on the program
-		this.delve = new Delve(args, localPath);
+		this.delve = new Delve();
+		await this.delve.init(args, localPath, this);
+
 		this.delve.onstdout = (str: string) => {
 			this.sendEvent(new OutputEvent(str, 'stdout'));
 		};
