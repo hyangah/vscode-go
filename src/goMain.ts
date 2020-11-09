@@ -7,9 +7,8 @@
 'use strict';
 
 import * as path from 'path';
-import { commands } from 'vscode';
 import vscode = require('vscode');
-import { extensionId } from './const';
+import { GoDlvDapDebugSession } from './debugAdapter2/goDlvDebug';
 import { browsePackages } from './goBrowsePackage';
 import { buildCode } from './goBuild';
 import { check, notifyIfGeneratedFile, removeTestStatus } from './goCheck';
@@ -139,8 +138,11 @@ export function activate(ctx: vscode.ExtensionContext) {
 	// debug
 	ctx.subscriptions.push(
 		vscode.debug.registerDebugConfigurationProvider('go', new GoDebugConfigurationProvider('go')));
+	// godlvdap debugger will be inlined - to pass the launch context early.
 	ctx.subscriptions.push(
 		vscode.debug.registerDebugConfigurationProvider('godlvdap', new GoDebugConfigurationProvider('godlvdap')));
+	ctx.subscriptions.push(vscode.debug.registerDebugAdapterDescriptorFactory(
+		'godlvdap', new InlinedDelveDapDebugAdapterExecutableFactory()));
 
 	buildDiagnosticCollection = vscode.languages.createDiagnosticCollection('go');
 	ctx.subscriptions.push(buildDiagnosticCollection);
@@ -782,5 +784,18 @@ async function getConfiguredGoToolsCommand() {
 		} catch (e) {
 			outputChannel.appendLine(`failed to run 'go env': ${e}`);
 		}
+	}
+}
+
+// Returns the DA descriptor factory that builds an inlined delve dap debug adapter
+// whose constructor takes the launch configuration. Currently, some info from the
+// launch configuration is necessary when launching/attaching to the delve dap
+// (i.e., host/port especially if it's remote-attach mode, and cwd, showLog/logOutput
+// attributes if we are launching the delve dap process).
+class InlinedDelveDapDebugAdapterExecutableFactory implements vscode.DebugAdapterDescriptorFactory {
+	public createDebugAdapterDescriptor(session: vscode.DebugSession)
+		: vscode.ProviderResult<vscode.DebugAdapterDescriptor> {
+		const impl = new GoDlvDapDebugSession(session.configuration as any);
+		return new vscode.DebugAdapterInlineImplementation(impl);
 	}
 }

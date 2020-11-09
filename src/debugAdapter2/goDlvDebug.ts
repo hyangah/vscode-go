@@ -126,14 +126,23 @@ export class GoDlvDapDebugSession extends LoggingDebugSession {
 	private readonly DEFAULT_DELVE_PORT = 42042;
 
 	private logLevel: Logger.LogLevel = Logger.LogLevel.Error;
-
 	private dlvClient: DelveClient = null;
+
+	// initLaunchRequestArguments is supplied to the constructor
+	// when this debug session starts in inline mode. That allows
+	// to launch the `dlv dap` process when DAP client requests
+	// to initialize. If not provided during the construction time,
+	// dlv dap launch happens only after the launch/attach request
+	// is received.
+	private initLaunchRequestArguments: LaunchRequestArguments = null;
 
 	// Child process used to track debugee launched without debugging (noDebug
 	// mode). Either debugProcess or dlvClient are null.
 	private debugProcess: ChildProcess = null;
 
-	public constructor() {
+	public constructor(arg?: boolean | LaunchRequestArguments) {
+		// boolean is the legacy, obsolete constructor args.
+		// We care about only the LaunchRequestArguments (object) type parameter.
 		super();
 
 		// Invoke logger.init here because we want logging to work in 'inline'
@@ -144,17 +153,35 @@ export class GoDlvDapDebugSession extends LoggingDebugSession {
 		// this debugger uses zero-based lines and columns
 		this.setDebuggerLinesStartAt1(false);
 		this.setDebuggerColumnsStartAt1(false);
+
+		if ('object' === typeof arg) {
+			this.initLaunchRequestArguments = arg;
+		}
 	}
 
 	protected initializeRequest(
 		response: DebugProtocol.InitializeResponse,
-		args: DebugProtocol.InitializeRequestArguments,
-		request?: DebugProtocol.Request
+		args: DebugProtocol.InitializeRequestArguments
 	): void {
 		log('InitializeRequest');
+
+		// The debug adapter is started in inline mode and initLaunchRequestArguments
+		// has the enough context to launch dlv dap with.
+		if (!!this.initLaunchRequestArguments) {
+			const request = {
+				seq: 1, // The original DebugProtocol.Request is lost. Let's fake the seq.
+				type: 'request',
+				command: 'initialize',
+				arguments: args
+			};
+			this.startDelveDAP(response, this.initLaunchRequestArguments, request);
+			return;
+		}
+
+		// Legacy mode - when the debug adapter is started as an external process.
 		response.body.supportsConfigurationDoneRequest = true;
 
-		// We respond to InitializeRequest here, because Delve hasn't been
+		// We respond to InitializeRequest here, because Delve couldn't be
 		// launched yet. Delve will start responding to DAP requests after
 		// LaunchRequest is received, which tell us how to start it.
 
@@ -172,85 +199,12 @@ export class GoDlvDapDebugSession extends LoggingDebugSession {
 		args: LaunchRequestArguments,
 		request: DebugProtocol.Request
 	): void {
-		// Setup logger now that we have the 'trace' level passed in from
-		// LaunchRequestArguments.
-		this.logLevel =
-			args.trace === 'verbose'
-				? Logger.LogLevel.Verbose
-				: args.trace === 'log'
-					? Logger.LogLevel.Log
-					: Logger.LogLevel.Error;
-		const logPath =
-			this.logLevel !== Logger.LogLevel.Error ? path.join(os.tmpdir(), 'vscode-godlvdapdebug.txt') : undefined;
-		logger.setup(this.logLevel, logPath);
 		log('launchRequest');
-
-		// In noDebug mode with the 'debug' launch mode, we don't launch Delve
-		// but run the debugee directly.
-		// For other launch modes we currently still defer to Delve, for
-		// compatibility with the old debugAdapter.
-		// See https://github.com/golang/vscode-go/issues/336
-		if (args.noDebug && args.mode === 'debug') {
-			try {
-				this.launchNoDebug(args);
-			} catch (e) {
-				logError(`launchNoDebug failed: "${e}"`);
-				// TODO: define error constants
-				// https://github.com/golang/vscode-go/issues/305
-				this.sendErrorResponse(
-					response,
-					3000,
-					`Failed to launch "${e}"`);
-			}
+		if (!this.dlvClient) {
+			this.startDelveDAP(response, args, request);
 			return;
 		}
-
-		if (!args.port) {
-			args.port = this.DEFAULT_DELVE_PORT;
-		}
-		if (!args.host) {
-			args.host = this.DEFAULT_DELVE_HOST;
-		}
-
-		this.dlvClient = new DelveClient(args);
-
-		this.dlvClient.on('stdout', (str) => {
-			log('dlv stdout:', str);
-		});
-
-		this.dlvClient.on('stderr', (str) => {
-			log('dlv stderr:', str);
-		});
-
-		this.dlvClient.on('connected', () => {
-			// Once the client is connected to Delve, forward it the launch
-			// request to begin the actual debugging session.
-			this.dlvClient.send(request);
-		});
-
-		this.dlvClient.on('close', (rc) => {
-			if (rc !== 0) {
-				// TODO: define error constants
-				// https://github.com/golang/vscode-go/issues/305
-				this.sendErrorResponse(
-					response,
-					3000,
-					'Failed to continue: Check the debug console for details.');
-			}
-			log('Sending TerminatedEvent as delve is closed');
-			this.sendEvent(new TerminatedEvent());
-		});
-
-		// Relay events and responses back to vscode. In the future we will
-		// add middleware here to intercept specific kinds of responses/events
-		// for special handling.
-		this.dlvClient.on('event', (event) => {
-			this.sendEvent(event);
-		});
-
-		this.dlvClient.on('response', (resp) => {
-			this.sendResponse(resp);
-		});
+		this.dlvClient.send(request);
 	}
 
 	protected attachRequest(
@@ -584,15 +538,98 @@ export class GoDlvDapDebugSession extends LoggingDebugSession {
 		this.dlvClient.send(request);
 	}
 
+	private startDelveDAP(
+		response: DebugProtocol.LaunchResponse,
+		args: LaunchRequestArguments,
+		request: DebugProtocol.Request) {
+		// Setup logger now that we have the 'trace' level passed in from
+		// LaunchRequestArguments.
+		this.logLevel =
+			args.trace === 'verbose'
+				? Logger.LogLevel.Verbose
+				: args.trace === 'log'
+					? Logger.LogLevel.Log
+					: Logger.LogLevel.Error;
+		const logPath =
+			this.logLevel !== Logger.LogLevel.Error ? path.join(os.tmpdir(), 'vscode-godlvdapdebug.txt') : undefined;
+		logger.setup(this.logLevel, logPath);
+		// In noDebug mode with the 'debug' launch mode, we don't launch Delve
+		// but run the debugee directly.
+		// For other launch modes we currently still defer to Delve, for
+		// compatibility with the old debugAdapter.
+		// See https://github.com/golang/vscode-go/issues/336
+		if (args.noDebug && (args.mode === 'debug' || args.mode === 'test')) {
+			try {
+				this.launchNoDebug(args);
+			} catch (e) {
+				logError(`launchNoDebug failed: "${e}"`);
+				// TODO: define error constants
+				// https://github.com/golang/vscode-go/issues/305
+				this.sendErrorResponse(
+					response,
+					3000,
+					`Failed to launch "${e}"`);
+			}
+			return;
+		}
+
+		if (!args.port) {
+			args.port = this.DEFAULT_DELVE_PORT;
+		}
+		if (!args.host) {
+			args.host = this.DEFAULT_DELVE_HOST;
+		}
+
+		this.dlvClient = new DelveClient(args);
+
+		this.dlvClient.on('stdout', (str) => {
+			log('dlv stdout:', str);
+		});
+
+		this.dlvClient.on('stderr', (str) => {
+			log('dlv stderr:', str);
+		});
+
+		this.dlvClient.on('connected', () => {
+			// Once the client is connected to Delve, forward it the launch
+			// request to begin the actual debugging session.
+			this.dlvClient.send(request);
+		});
+
+		this.dlvClient.on('close', (rc) => {
+			if (rc !== 0) {
+				// TODO: define error constants
+				// https://github.com/golang/vscode-go/issues/305
+				this.sendErrorResponse(
+					response,
+					3000,
+					'Failed to continue: Check the debug console for details.');
+			}
+			log('Sending TerminatedEvent as delve is closed');
+			this.sendEvent(new TerminatedEvent());
+		});
+
+		// Relay events and responses back to vscode. In the future we will
+		// add middleware here to intercept specific kinds of responses/events
+		// for special handling.
+		this.dlvClient.on('event', (event) => {
+			this.sendEvent(event);
+		});
+
+		this.dlvClient.on('response', (resp) => {
+			this.sendResponse(resp);
+		});
+	}
+
 	// Launch the debugee process without starting a debugger.
 	// This implements the `Run > Run Without Debugger` functionality in vscode.
 	// Note: this method currently assumes launchArgs.mode === 'debug'.
 	private launchNoDebug(launchArgs: LaunchRequestArguments): void {
-		if (launchArgs.mode !== 'debug') {
+		if (launchArgs.mode !== 'debug' && launchArgs.mode !== 'test') {
 			throw new Error('launchNoDebug requires "debug" mode');
 		}
-		const {program, dirname, programIsDirectory} = parseProgramArgSync(launchArgs);
-		const goRunArgs = ['run'];
+		const { program, dirname, programIsDirectory } = parseProgramArgSync(launchArgs);
+		const goRunArgs = launchArgs.mode === 'debug' ? ['run'] : ['test'];
 		if (launchArgs.buildFlags) {
 			goRunArgs.push(launchArgs.buildFlags);
 		}
@@ -663,8 +700,7 @@ class DelveClient extends DAPClient {
 
 		if (!fs.existsSync(dlvPath)) {
 			log(
-				`Couldn't find dlv at the Go tools path, ${process.env['GOPATH']}${
-				env['GOPATH'] ? ', ' + env['GOPATH'] : ''
+				`Couldn't find dlv at the Go tools path, ${process.env['GOPATH']}${env['GOPATH'] ? ', ' + env['GOPATH'] : ''
 				} or ${envPath}`
 			);
 			throw new Error(
@@ -770,5 +806,5 @@ function parseProgramArgSync(launchArgs: LaunchRequestArguments
 		throw new Error('The program attribute must be a directory or .go file in debug mode');
 	}
 	const dirname = programIsDirectory ? program : path.dirname(program);
-	return {program, dirname, programIsDirectory};
+	return { program, dirname, programIsDirectory };
 }
