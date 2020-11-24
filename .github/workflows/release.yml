@@ -53,8 +53,8 @@ jobs:
           echo "EXT_VERSION=${TAGGED_VERSION}" >> $GITHUB_ENV
           WRITTEN_VERSION="$(cat package.json | jq '.version' -r)"
 
-          if [[ "${TAGGED_VERSION}"" == *"-"* ]]; then
-            if [[ "${TAGGED_VERSION}" != "${WRITTEN_VERSION}-rc."* ]]; then
+          if [[ "${TAGGED_VERSION}" == *"-"* ]]; then
+            if [[ ! "${TAGGED_VERSION}" == "${WRITTEN_VERSION}"-rc.* ]]; then
               echo "Prerelease Tag and Version in package.json are not compatible: '${TAGGED_VERSION}' vs '${WRITTEN_VERSION}'"
               exit 1
             fi
