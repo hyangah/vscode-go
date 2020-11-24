@@ -34,7 +34,7 @@ jobs:
   release:
     name: create release
     runs-on: ubuntu-latest
-    if: github.repository == 'golang/vscode-go'
+    if: github.repository == 'hyangah/vscode-go'
 
     steps:
       - name: checkout code
