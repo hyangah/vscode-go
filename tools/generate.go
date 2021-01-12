@@ -53,6 +53,8 @@ type Property struct {
 	Enum                       []string               `json:"enum,omitempty"`
 }
 
+const indent = "&nbsp;&nbsp;"
+
 func main() {
 	flag.Parse()
 
@@ -120,15 +122,27 @@ To update the settings, run "go run tools/generate.go -w".
 	b.Reset()
 
 	var properties []Property
+	var goplsProperty Property
 	for name, p := range pkgJSON.Contributes.Configuration.Properties {
 		p.name = name
+		if name == "gopls" {
+			goplsProperty = p
+		}
 		properties = append(properties, p)
 	}
+
 	sort.Slice(properties, func(i, j int) bool {
 		return properties[i].name < properties[j].name
 	})
-	indent := "&nbsp;&nbsp;"
+
 	for i, p := range properties {
+		if p.name == "gopls" {
+			desc := "See the [`gopls` section](#gopls) section for more details."
+			b.WriteString(fmt.Sprintf("### `%s`\n\n%s", p.name, desc))
+			b.WriteString("\n\n")
+			continue
+		}
+
 		desc := p.Description
 		if p.MarkdownDescription != "" {
 			desc = p.MarkdownDescription
@@ -151,6 +165,8 @@ To update the settings, run "go run tools/generate.go -w".
 		}
 		switch p.Type {
 		case "object":
+			writeSettingsObjectProperties(&b, p.Properties)
+
 			x, ok := p.Default.(map[string]interface{})
 			// do nothing if it is nil
 			if ok && len(x) > 0 {
@@ -159,7 +175,7 @@ To update the settings, run "go run tools/generate.go -w".
 					keys = append(keys, k)
 				}
 				sort.Strings(keys)
-				b.WriteString("\n\nDefault:{<br/>\n")
+				b.WriteString("\nDefault:{<br/>\n")
 				for _, k := range keys {
 					v := x[k]
 					output := fmt.Sprintf("%v", v)
@@ -173,7 +189,6 @@ To update the settings, run "go run tools/generate.go -w".
 				}
 				b.WriteString("    }\n")
 			}
-			writeSettingsObjectProperties(&b, "####", p.Properties)
 
 		case "boolean", "string", "number":
 			b.WriteString(fmt.Sprintf("\n\nDefault: `%v`", p.Default))
@@ -193,10 +208,20 @@ To update the settings, run "go run tools/generate.go -w".
 			b.WriteString("\n\n")
 		}
 	}
+
+	// Write gopls section.
+	b.WriteString("## Settings for `gopls`\n\n")
+	writeGoplsSettingsSection(&b, goplsProperty)
+
 	rewrite(filepath.Join(dir, "docs", "settings.md"), b.Bytes())
 }
 
-func writeSettingsObjectProperties(b *bytes.Buffer, heading string, properties map[string]interface{}) {
+func writeGoplsSettingsSection(b *bytes.Buffer, goplsProperty Property) {
+	desc := goplsProperty.MarkdownDescription
+	b.WriteString(desc)
+	b.WriteString("\n\n")
+
+	properties := goplsProperty.Properties
 	var names []string
 	for name := range properties {
 		names = append(names, name)
@@ -206,7 +231,86 @@ func writeSettingsObjectProperties(b *bytes.Buffer, heading string, properties m
 	for _, name := range names {
 		p, ok := properties[name].(map[string]interface{})
 		if !ok {
-			b.WriteString(fmt.Sprintf("\n\n\n%s %s\n", heading, name))
+			b.WriteString(fmt.Sprintf("### `%s`\n", name))
+			continue
+		}
+
+		desc := ""
+		if d := p["description"]; d != nil {
+			desc = fmt.Sprintf("%v", d)
+		}
+		if d := p["markdownDescription"]; d != nil {
+			desc = fmt.Sprintf("%v", d)
+		}
+		deprecation := ""
+		if d := p["deprecationMessage"]; d != nil {
+			deprecation = fmt.Sprintf("%v", d)
+		}
+		if d := p["markdownDeprecationMessage"]; d != nil {
+			deprecation = fmt.Sprintf("%v", d)
+		}
+		if deprecation != "" {
+			name += " (deprecated)"
+			desc = deprecation + "\n" + desc
+		}
+		b.WriteString(fmt.Sprintf("### `%s`\n%s", name, desc))
+
+		switch p["type"] {
+		case "object":
+			x, ok := p["default"].(map[string]interface{})
+			// do nothing if it is nil
+			if ok && len(x) > 0 {
+				keys := []string{}
+				for k := range x {
+					keys = append(keys, k)
+				}
+				sort.Strings(keys)
+				b.WriteString(fmt.Sprintf("\nDefault:{<br/>\n"))
+				for _, k := range keys {
+					v := x[k]
+					output := fmt.Sprintf("%v", v)
+					if str, ok := v.(string); ok {
+						output = fmt.Sprintf("%q", str)
+					}
+					// if v is an empty string, nothing gets printed
+					// if v is a map/object, it is printed on one line
+					// this could be improved at the cost of more code
+					b.WriteString(fmt.Sprintf("%s`\"%s\": %s`,<br/>\n", indent, k, output))
+				}
+				b.WriteString("    }\n")
+			}
+
+		case "boolean", "string", "number":
+			b.WriteString(fmt.Sprintf("\n\nDefault: `%v`", p["default"]))
+		case "array":
+			x, ok := p["default"].([]interface{})
+			if ok && len(x) > 0 {
+				b.WriteString(fmt.Sprintf("\n\nDefault: `%v`", p["default"]))
+			}
+		default:
+			b.WriteString(fmt.Sprintf("\n\nefault: `%v`", p["default"]))
+		}
+		b.WriteString("\n\n")
+	}
+}
+
+func writeSettingsObjectProperties(b *bytes.Buffer, properties map[string]interface{}) {
+	var names []string
+	for name := range properties {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+
+	b.WriteString("\n")
+	if len(names) > 0 {
+		b.WriteString("| Properties | Description |\n")
+		b.WriteString("| --- | --- |\n")
+	}
+
+	for _, name := range names {
+		p, ok := properties[name].(map[string]interface{})
+		if !ok {
+			b.WriteString(fmt.Sprintf("| `%s` |   |\n", name))
 			continue
 		}
 
@@ -229,6 +333,10 @@ func writeSettingsObjectProperties(b *bytes.Buffer, heading string, properties m
 			name += " (deprecated)"
 			desc = deprecation + "\n" + desc
 		}
-		b.WriteString(fmt.Sprintf("\n\n%s `%s`\n%s", heading, name, desc))
+		b.WriteString(fmt.Sprintf("| `%s` | %s |\n", name, desc))
 	}
+	if len(names) > 0 {
+		b.WriteString("| | |\n")
+	}
+	b.WriteString("\n")
 }
