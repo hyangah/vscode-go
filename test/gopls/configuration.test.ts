@@ -8,6 +8,7 @@ import { getGoplsConfig } from '../../src/config';
 import * as lsp from '../../src/goLanguageServer';
 
 suite('gopls configuration tests', () => {
+	console.log(`USER: ${process.env.USER}`);
 	test('filterGoplsDefaultConfigValues', async () => {
 		const defaultGoplsConfig = getGoplsConfig();
 		interface TestCase {

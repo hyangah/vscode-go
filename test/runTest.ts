@@ -4,6 +4,7 @@ import { runTests } from 'vscode-test';
 async function main() {
 	// We are in test mode.
 	process.env['VSCODE_GO_IN_TEST'] = '1';
+	console.log(`SCRIPT USER: ${process.env.USER}`);
 
 	// The folder containing the Extension Manifest package.json
 	// Passed to `--extensionDevelopmentPath`
