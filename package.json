@@ -766,7 +766,7 @@
                   },
                   {
                     "type": "number",
-                    "description": "The ID of the process to be debugged."
+                    "description": "The numeric ID of the process to be debugged."
                   }
                 ],
                 "default": 0
