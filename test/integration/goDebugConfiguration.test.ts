@@ -35,7 +35,7 @@ suite('Debug Environment Variable Merge Test', () => {
 	let tmpDir = '';
 	const toolExecutionEnv: NodeJS.Dict<string> = {};
 	setup(() => {
-		tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'godebugconfig_test'));
+		tmpDir = fs.realpathSync.native(fs.mkdtempSync(path.join(os.tmpdir(), 'godebugconfig_test')));
 		sandbox = sinon.createSandbox();
 	});
 
@@ -469,7 +469,7 @@ suite('Debug Configuration Converts Relative Paths', () => {
 			{ program, cwd, __buildDir },
 			{
 				program: path.join(os.tmpdir(), 'foo', 'bar.exe'),
-				cwd: os.tmpdir(),
+				cwd: fs.realpathSync.native(os.tmpdir()),
 				__buildDir: undefined
 			}
 		);
@@ -493,7 +493,7 @@ suite('Debug Configuration Converts Relative Paths', () => {
 			{ program, cwd, output, __buildDir },
 			{
 				program: '.',
-				cwd: os.tmpdir(),
+				cwd: fs.realpathSync.native(os.tmpdir()),
 				output: path.join(os.tmpdir(), 'debug'),
 				__buildDir: path.join(os.tmpdir(), 'foo', 'bar', 'pkg')
 			}

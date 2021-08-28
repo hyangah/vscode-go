@@ -1839,7 +1839,7 @@ const testAll = (ctx: Mocha.Context, isDlvDap: boolean) => {
 
 		let tmpDir: string;
 		suiteSetup(() => {
-			tmpDir = fs.mkdtempSync(path.join(tmpdir(), 'logDestTest'));
+			tmpDir = fs.realpathSync.native(fs.mkdtempSync(path.join(tmpdir(), 'logDestTest')));
 		});
 		suiteTeardown(() => {
 			rmdirRecursive(tmpDir);
@@ -1906,7 +1906,7 @@ const testAll = (ctx: Mocha.Context, isDlvDap: boolean) => {
 		let tmpDir: string;
 
 		suiteSetup(() => {
-			tmpDir = fs.mkdtempSync(path.join(DATA_ROOT, 'substitutePathTest'));
+			tmpDir = fs.realpathSync.native(fs.mkdtempSync(path.join(DATA_ROOT, 'substitutePathTest')));
 		});
 
 		suiteTeardown(() => {
@@ -1938,7 +1938,7 @@ const testAll = (ctx: Mocha.Context, isDlvDap: boolean) => {
 		suite('substitutePath with missing files', () => {
 			let goBuildOutput: string;
 			suiteSetup(() => {
-				goBuildOutput = fs.mkdtempSync(path.join(tmpdir(), 'output'));
+				goBuildOutput = fs.realpathSync.native(fs.mkdtempSync(path.join(tmpdir(), 'output')));
 			});
 
 			suiteTeardown(() => {
