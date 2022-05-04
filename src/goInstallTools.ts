@@ -291,7 +291,7 @@ async function installToolWithGoInstall(goVersion: GoVersion, env: NodeJS.Dict<s
 
 	const execFile = util.promisify(cp.execFile);
 	logVerbose(`$ ${goBinary} install -v ${importPath}} (cwd: ${opts.cwd})`);
-	await execFile(goBinary, ['install', '-v', importPath], opts);
+	await execFile(goBinary, ['install', '-v', '-trimpath', importPath], opts);
 }
 
 async function installToolWithGoGet(
@@ -323,6 +323,8 @@ async function installToolWithGoGet(
 	// simple `go install` or `go get`. We need to get, build, and rename them.
 	if (hasModSuffix(tool)) {
 		args.push('-d'); // get the version, but don't build.
+	} else {
+		args.push('-trimpath');
 	}
 	args.push(importPath);
 
@@ -358,7 +360,7 @@ async function installToolWithGoGet(
 			// go build does not take @version suffix yet.
 			const importPathWithoutVersion = getImportPath(tool, goVersion);
 			logVerbose(`$ ${goBinary} build -o ${outputFile} ${importPathWithoutVersion} (cwd: ${opts.cwd})`);
-			await execFile(goBinary, ['build', '-o', outputFile, importPathWithoutVersion], opts);
+			await execFile(goBinary, ['build', '-trimpath', '-o', outputFile, importPathWithoutVersion], opts);
 		}
 	} catch (e) {
 		logVerbose(`FAILED: ${JSON.stringify(e, null, 1)}`);

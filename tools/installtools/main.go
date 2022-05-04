@@ -135,6 +135,7 @@ func installTools(binDir string, goMinorVersion int) error {
 	for _, tool := range tools {
 		ver := pickVersion(goMinorVersion, tool.versions)
 		path := tool.path + "@" + ver
+		//cmd := exec.Command("go", installCmd, "-trimpath", path)
 		cmd := exec.Command("go", installCmd, path)
 		cmd.Env = env
 		cmd.Dir = dir

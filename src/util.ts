@@ -971,7 +971,8 @@ export function makeMemoizedByteOffsetConverter(buffer: Buffer): (byteOffset: nu
 	};
 }
 
-export function rmdirRecursive(dir: string) {
+export function rmdirRecursive(dir: string | undefined) {
+	if (!dir) return;
 	if (fs.existsSync(dir)) {
 		fs.readdirSync(dir).forEach((file) => {
 			const relPath = path.join(dir, file);

@@ -129,6 +129,8 @@ suite('Installation Tests', function () {
 							`expected ${tc.name}@${tc.wantVersion}, got ${moduleVersion}`
 						);
 					}
+					// Check the compiled binary does not include absolute path.
+
 					return resolve();
 				})
 			);
