@@ -49,16 +49,16 @@ For [Remote Debugging](#remote-debugging) (launch configuration with `"mode": "r
 the extension will use the `"legacy"` mode by default, so setting this attribute won't be necessary.
 
 Throughout this document, we assume that you opted in to use the legacy debug adapter.
-For debugging using the new debug adapter (default, `"dlv-dap"` mode), please see the documentation about [Debugging](https://github.com/golang/vscode-go/tree/master/docs/debugging-legacy.md).
+For debugging using the new debug adapter (default, `"dlv-dap"` mode), please see the documentation about [Debugging](Debugging.md).
 
 ### Configuration
 
 You may not need to configure any settings to start debugging your programs, but you should be aware that the debugger looks at the following settings.
 
-* Related to [`GOPATH`](gopath.md):
-  * [`go.gopath`](settings.md#go.gopath)
-  * [`go.inferGopath`](settings.md#go.inferGopath)
-* [`go.delveConfig`](settings.md#go.delveConfig)
+* Related to [`GOPATH`](GOPATH.md):
+  * [`go.gopath`](Settings.md#go.gopath)
+  * [`go.inferGopath`](Settings.md#go.inferGopath)
+* [`go.delveConfig`](Settings.md#go.delveConfig)
   * `apiVersion`: Controls the version of the Delve API used (default: `2`).
   * `dlvLoadConfig`: The configuration passed to Delve, which controls how variables are shown in the Debug pane. Not applicable when `apiVersion` is 1.
     * `maxStringLen`: Maximum number of bytes read from a string (default: `64`).
@@ -377,7 +377,7 @@ If you notice `Unverified breakpoints` or missing variables, ensure that your bi
 
 ### Check your `GOPATH`
 
-Make sure that the debugger is using the right [`GOPATH`](gopath.md). This is probably the issue if you see `Cannot find package ".." in any of ...` errors. Read more about configuring your [GOPATH](gopath.md) or [file an issue report](https://github.com/golang/vscode-go/issues/new/choose).
+Make sure that the debugger is using the right [`GOPATH`](GOPATH.md). This is probably the issue if you see `Cannot find package ".." in any of ...` errors. Read more about configuring your [GOPATH](GOPATH.md) or [file an issue report](https://github.com/golang/vscode-go/issues/new/choose).
 
 **As a work-around**, add the correct `GOPATH` as an environment variable in the `env` property in the `launch.json` file.
 
@@ -396,7 +396,7 @@ With `"trace": "log"`, you will see the actual call being made to `dlv`. To aid 
 
 ### **Optional**: Debug the debugger
 
-This is not a required step, but if you want to continue digging deeper, you can, in fact, debug the debugger. The code for the debugger can be found in the [debug adapter module](../src/debugAdapter). See our [contribution guide](contributing.md) to learn how to [run](contributing.md#run) and [sideload](contributing.md#sideload) the Go extension.
+This is not a required step, but if you want to continue digging deeper, you can, in fact, debug the debugger. The code for the debugger can be found in the [debug adapter module](../src/debugAdapter). See our [contribution guide](Contributing.md) to learn how to [run](Contributing.md#run) and [sideload](Contributing.md#sideload) the Go extension.
 
 ### Ask for help
 

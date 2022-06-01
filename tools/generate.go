@@ -180,7 +180,7 @@ func main() {
 			b.WriteString("\n\n")
 		}
 	}
-	rewrite(filepath.Join(dir, "docs", "commands.md"), b.Bytes())
+	rewrite(filepath.Join(dir, "docs", "Commands.md"), b.Bytes())
 
 	// Clear so that we can rewrite settings.md.
 	b.Reset()
@@ -218,11 +218,11 @@ func main() {
 	b.WriteString("## Settings for `gopls`\n\n")
 	writeGoplsSettingsSection(b, goplsProperty)
 
-	rewrite(filepath.Join(dir, "docs", "settings.md"), b.Bytes())
+	rewrite(filepath.Join(dir, "docs", "Settings.md"), b.Bytes())
 
 	b.Reset()
 	generateDebugConfigTable(b, pkgJSON)
-	rewriteDebugDoc(filepath.Join(dir, "docs", "debugging.md"), b.Bytes())
+	rewriteDebugDoc(filepath.Join(dir, "docs", "Debugging.md"), b.Bytes())
 
 	// Only update the latest tool versions if the flag is set.
 	if !*updateLatestToolVersionsFlag {

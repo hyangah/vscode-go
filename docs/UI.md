@@ -47,4 +47,4 @@ More information about [using Go modules](https://go.dev/blog/using-go-modules )
 
 The view displays the go environment variables (`go env`) that are applied to the file open in the editor. You can customize the list by "Go: Edit Workspace" command (pencil icon), and update modifiable environment variables through this view.
 
-It displays required [tools](tools.md) and their location/version info, too.
+It displays required [tools](Tools.md) and their location/version info, too.

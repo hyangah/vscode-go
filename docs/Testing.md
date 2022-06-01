@@ -41,8 +41,8 @@ This is the workflow triggered for every PR and commit made to our mirror reposi
 [`.github/workflows/test-smoke.yml`](../.github/workflows/test-smoke.yml)
 define the GitHub Actions-based CI workflow.
 
-### [Nightly Release](nightly.md)
+### [Nightly Release](Nightly.md)
 
-A new version of the [Go Nightly](nightly.md) extension, based on the current `master` branch, is released at least once a day between Monday and Thursday. Learn more in the [Go Nightly documentation](nightly.md).
+A new version of the [Go Nightly](Nightly.md) extension, based on the current `master` branch, is released at least once a day between Monday and Thursday. Learn more in the [Go Nightly documentation](Nightly.md).
 
 The daily release process is automated via a GitHub Action. See [`.github/workflows/release.yml`](../.github/workflows/release.yml) and [`build/all.bash`](../build/all.bash).

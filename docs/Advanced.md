@@ -34,7 +34,7 @@ version of `go` with one of the following options.
 * (Preferred) Adjust your `PATH` or `Path` environment variable, and *open VS
   Code with the adjusted environment* variable, or
 * Use the Go extension's `"Go: Choose Go Environment"` command that opens a
-  [menu](ui.md) to change the `go` version, or
+  [menu](UI.md) to change the `go` version, or
 * Use the `"go.alternateTools"` settings and specify the absolute path to the
   `go` command. `"go.alternateTools": { "go": "/path/to/go/command" }`
 

@@ -1,1 +1,1 @@
-# See the [testing documentation](../docs/testing.md)
+# See the [testing documentation](../docs/Testing.md)

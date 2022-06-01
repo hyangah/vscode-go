@@ -18,11 +18,11 @@ Check the bottom of the VS Code window for any warnings and notifications. For e
 
 Run the [`Go: Locate Configured Go Tools`](commands.md#go-locate-configured-go-tools) command. The output is split into sections.
 
-In the first indented section, check that at least `go-outline`, `dlv`, and `gopls` are installed -- they're necessary for the extension's basic functionality. The other tools [provide optional features](tools.md) and are less important unless you need those features. You can install tools by running the [`Go: Install/Update Tools`](commands.md#go-installupdate-tools) command.
+In the first indented section, check that at least `go-outline`, `dlv`, and `gopls` are installed -- they're necessary for the extension's basic functionality. The other tools [provide optional features](Tools.md) and are less important unless you need those features. You can install tools by running the [`Go: Install/Update Tools`](commands.md#go-installupdate-tools) command.
 
 Then, look at the `Workspace Folder` section(s) for the environment in use. Verify that `GOROOT` is set to a valid Go installation; if not, follow the [getting started guide](../README.md#install-go). If `GOPATH` is unset, or surprising, read more about [setting up your `GOPATH`](gopath.md#setting-gopath). Also, `GOMOD` should usually point to your project's `go.mod` file if you're in module mode. (More complicated workspace setups may have a blank `GOMOD`. See the `gopls` [workspace documentation](https://github.com/golang/tools/blob/master/gopls/doc/workspace.md) for more on valid workspace setups.) To change the workspace environment, use settings such as [`go.gopath`](settings.md#go.gopath) and [`go.toolsEnvVars`](settings.md#go.toolsEnvVars).
 
-Finally, take a look at your settings in the JSON form (`Preferences: Open Settings (JSON)`). This is an easier way to quickly see what non-default configurations you have. Consider [reading about](settings.md) any settings you don't understand, or just commenting them out.
+Finally, take a look at your settings in the JSON form (`Preferences: Open Settings (JSON)`). This is an easier way to quickly see what non-default configurations you have. Consider [reading about](Settings.md) any settings you don't understand, or just commenting them out.
 
 ## Update tools
 

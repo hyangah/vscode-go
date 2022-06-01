@@ -6,11 +6,11 @@ These debugging features are possible by using [Delve](https://github.com/go-del
 The Go extension has been communicating with Delve through a custom debug adapter program (`legacy` mode).
 As the new [`Delve`'s native debug adapter implementation](https://github.com/go-delve/delve/tree/master/service/dap) has become available (since Delve v1.6.1), the Go extension is transitioning to deprecate the legacy debug adapter in favor of direct communication with Delve via [DAP](https://microsoft.github.io/debug-adapter-protocol/overview).
 
- 📣 **We are happy to announce that the new _`dlv-dap`_ mode of Delve integration is enabled for _local_ _debugging_ by default. For [_remote_ _debugging_](#remote-debugging) it is the default in [Go Nightly](docs/nightly.md) and is
+ 📣 **We are happy to announce that the new _`dlv-dap`_ mode of Delve integration is enabled for _local_ _debugging_ by default. For [_remote_ _debugging_](#remote-debugging) it is the default in [Go Nightly](docs/Nightly.md) and is
  available with stable builds on demand with `"debugAdapter": "dlv-dap"` attribute in `launch.json` or `settings.json`!**
 
 Many features and settings described in this document may be available only with the new `dlv-dap` mode.
-For troubleshooting and configuring the legacy debug adapter, see [the legacy debug adapter documentation](https://github.com/golang/vscode-go/tree/master/docs/debugging-legacy.md).
+For troubleshooting and configuring the legacy debug adapter, see [the legacy debug adapter documentation](https://github.com/golang/vscode-go/tree/master/docs/Debugging-Legacy.md).
 
 ## Getting Started
 
@@ -341,7 +341,7 @@ VS Code implements a generic, language-agnostic debugger UI based on [Debug Adap
 
 <p align="center"><img src="images/vscode-go-debug-arch.png" alt="vscode-go debug architecture"> </p>
 
-For information on debugging using the legacy debug adapter, please see the old [Debugging Documentation](https://github.com/golang/vscode-go/blob/master/docs/debugging.md). Note that many new or enhanced features discussed in this document may not be available with the legacy debug adapter.
+For information on debugging using the legacy debug adapter, please see the old [Debugging Documentation](DebuggingLegacy.md). Note that many new or enhanced features discussed in this document may not be available with the legacy debug adapter.
 
 ### Handling STDIN
 
@@ -555,7 +555,7 @@ Connect to it with a remote attach configuration in your `launch.json`:
 
 #### Connecting to Delve DAP with Target Specified at Client Start-Up
 
-In this mode the user must first manually start a [`dlv dap` server](https://github.com/go-delve/delve/blob/master/Documentation/usage/dlv_dap.md) listening at `host:port` and then specify the target program via [launch](#launch) or [attach](#attach) client config with a `"port"` attribute. Instead of starting a new local server, the Go extension will tell VS Code to connect to the server specified by `host:port` attributes and then send a request with the target to debug. This option provides the flexibility of easily adapting local configurations to connect to external servers, but ⚠️ must be used with care since anyone who can connect to the server can make it run arbitrary programs.
+In this mode the user must first manually start a [`dlv dap` server](https://github.com/go-delve/delve/blob/master/Documentation/usage/Dlv-DAP.md) listening at `host:port` and then specify the target program via [launch](#launch) or [attach](#attach) client config with a `"port"` attribute. Instead of starting a new local server, the Go extension will tell VS Code to connect to the server specified by `host:port` attributes and then send a request with the target to debug. This option provides the flexibility of easily adapting local configurations to connect to external servers, but ⚠️ must be used with care since anyone who can connect to the server can make it run arbitrary programs.
 
 When using `launch` mode, the `program` attribute must point to the absolute path of the package or binary to debug in the remote host’s file system even when `substitutePath` is specified. When using `attach` mode outside of local host, you need to specify the `processId` in the config since [the processId resolution feature](#attach) cannot gather information about processes running remotely.
 
@@ -609,9 +609,9 @@ Sometimes you might like to launch the program for debugging outside of VS Code 
 
 The suggestions below are intended to help you troubleshoot any problems you encounter. If you are unable to resolve the issue, please take a look at the [current known debugging issues](https://github.com/golang/vscode-go/issues?q=is%3Aissue+is%3Aopen+label%3ADebug) or [report a new issue](#reporting-issues).
 
-1. Read documentation and [FAQs](#faqs). Also check the [Delve FAQ](https://github.com/go-delve/delve/blob/master/Documentation/faq.md) in case the problem is mentioned there.
+1. Read documentation and [FAQs](#faqs). Also check the [Delve FAQ](https://github.com/go-delve/delve/blob/master/Documentation/FAQ.md) in case the problem is mentioned there.
 1. Check your `launch.json` configuration. Often error messages appearing in the DEBUG CONSOLE panel reveal issues.
-1. Update Delve (`dlv`) to pick up most recent bug fixes. Follow [the instruction](https://github.com/golang/vscode-go/blob/master/docs/debugging.md#staying-up-to-date).
+1. Update Delve (`dlv`) to pick up most recent bug fixes. Follow [the instruction](https://github.com/golang/vscode-go/blob/master/docs/Debugging.md#staying-up-to-date).
 1. Check if you can reproduce the issue with `dlv`, the command line tool from the integrated terminal. <!-- TODO(vscode-go): add instructions https://github.com/golang/vscode-go/issues/1931 --> If it's reproducible when using `dlv`, take a look at the [Delve project issue tracker](https://github.com/go-delve/delve/issues).
 1. Capture [logs](https://github.com/golang/vscode-go/blob/master/docs/debugging.md#collecting-logs) and inspect them.
 1. Look at the [existing debugging issues](https://github.com/golang/vscode-go/labels/Debug) if similar issues were reported.
@@ -692,7 +692,7 @@ The logging will appear in the `Go Debug` output channel (Command Palette -> "Vi
 
 The core part of Delve DAP implementation is in the [`service/dap`](https://github.com/go-delve/delve/tree/master/service/dap) package. Follow Delve project's [contribution guideline](https://github.com/go-delve/delve/blob/master/CONTRIBUTING.md#contributing-code) to send PRs.
 
-Code for integration with the Go extension is mostly in [`src/goDebugFactory.ts`](https://github.com/golang/vscode-go/blob/master/src/goDebugFactory.ts) and tests are in [`test/integration/goDebug.test.ts`](https://github.com/golang/vscode-go/blob/master/test/integration/goDebug.test.ts). Please take a look at VS Code Go project's [contribution guideline](https://github.com/golang/vscode-go/blob/master/docs/contributing.md) to learn about how to prepare a change and send it for review.
+Code for integration with the Go extension is mostly in [`src/goDebugFactory.ts`](https://github.com/golang/vscode-go/blob/master/src/goDebugFactory.ts) and tests are in [`test/integration/goDebug.test.ts`](https://github.com/golang/vscode-go/blob/master/test/integration/goDebug.test.ts). Please take a look at VS Code Go project's [contribution guideline](Contributing.md) to learn about how to prepare a change and send it for review.
 
 ### Testing
 

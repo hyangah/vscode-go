@@ -6,7 +6,7 @@ Before releasing a new version of the extension, please run the following smoke 
 
 First, clone [golang.org/x/example](https://github.com/golang/example). At the time of writing (June 2020), this repository has not changed since 2017. If it has changed since, these steps may not be exactly reproducible and should be adjusted.
 
-For now, we smoke test the extension only in [`GOPATH`](gopath.md) mode.
+For now, we smoke test the extension only in [`GOPATH`](GOPATH.md) mode.
 
 If it does not already exist:
 

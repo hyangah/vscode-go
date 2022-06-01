@@ -68,7 +68,7 @@ Jump to or peek a symbol's declaration.
 
 Find or go to the references of a symbol.
 
-This feature is not available if you are using Go modules **without** [`gopls`](gopls.md), the Go language server.
+This feature is not available if you are using Go modules **without** [`gopls`](https://go.dev/s/gopls), the Go language server.
 
 <div style="text-align: center;"><img src="images/findallreferences.gif" alt="Find references using the context menu" style="width: 75%"> </div>
 
@@ -76,7 +76,7 @@ This feature is not available if you are using Go modules **without** [`gopls`](
 
 Find the concrete types that implement a given interface.
 
-This feature is not available if you are using Go modules **without** [`gopls`](gopls.md), the Go language server.
+This feature is not available if you are using Go modules **without** [`gopls`](https://go.dev/s/gopls), the Go language server.
 
 <div style="text-align: center;"><img src="images/implementations.gif" alt="Go to implementations for Server that implements http.Handler and then finds all implementations of http.Handler in the workspace" style="width: 75%"> </div>
 
@@ -145,7 +145,7 @@ Rename all occurrences of a symbol in your workspace.
 
 **Note**: For undo after rename to work on Windows, you need to have `diff` tool on your `PATH`.
 
-This feature is not available if you are using Go modules **without** [`gopls`](gopls.md), the Go language server.
+This feature is not available if you are using Go modules **without** [`gopls`](https://go.dev/s/gopls), the Go language server.
 
 <div style="text-align: center;"><img src="images/rename.gif" alt="Rename an exported variable in Go workspace" style="width: 75%"> </div>
 
@@ -228,9 +228,9 @@ Behind the scenes, the `Debug: Start without Debugging` command calls `go run`. 
 
 Show code coverage in the editor, either after running a test or on-demand. This can be done via the commands: [`Go: Apply Cover Profile`](commands.md#go-apply-cover-profile) and [`Go: Toggle Test Coverage in Current Package`](commands.md#go-toggle-test-coverage-in-current-package).
 
-## [Debugging](debugging.md)
+## [Debugging](Debugging.md)
 
-This extension offers debugging of Go programs. See the [debugging documentation](debugging.md) for more information.
+This extension offers debugging of Go programs. See the [debugging documentation](Debugging.md) for more information.
 
 ## Other
 

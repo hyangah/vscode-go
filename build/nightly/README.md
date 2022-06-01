@@ -11,4 +11,4 @@ please install [the default VS Code Go extension](https://marketplace.visualstud
 > * Go Nightly is released more frequently than the stable version (once per weekday).
 > * Go Nightly includes features and bug fixes that are not yet finalized.
 > * Go Nightly may use pre-release versions of tools (such as `gopls`) instead of released versions.
-> * For more information about Go Nightly, read the [Go Nightly](../nightly.md) documentation.
+> * For more information about Go Nightly, read the [Go Nightly](../docs/Nightly.md) documentation.

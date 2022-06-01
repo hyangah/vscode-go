@@ -15,7 +15,7 @@ This codebase is currently in flux: We are working on using [`Delve`'s native DA
 
 ## Before you begin
 
-Before you start working on your change, please read the [contribution guidelines](contributing.md). This document assumes that you are already familiar with the process of [building](contributing.md#setup), [running](contributing.md#run), and [sideloading](contributing.md#sideload) the VS Code Go extension.
+Before you start working on your change, please read the [contribution guidelines](Contributing.md). This document assumes that you are already familiar with the process of [building](Contributing.md#setup), [running](Contributing.md#run), and [sideloading](Contributing.md#sideload) the VS Code Go extension.
 
 ## Debug only the Debug Adapter
 

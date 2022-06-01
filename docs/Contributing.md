@@ -2,7 +2,7 @@
 
 We welcome your contributions and thank you for working to improve the Go development experience in VS Code.
 
-This guide will explain the process of setting up your development environment to work on the VS Code Go extension, as well as the process of sending out your change for review. If you're interested in testing the master branch or pre-releases of the extension, please see the [Go Nightly documentation](nightly.md).
+This guide will explain the process of setting up your development environment to work on the VS Code Go extension, as well as the process of sending out your change for review. If you're interested in testing the master branch or pre-releases of the extension, please see the [Go Nightly documentation](Nightly.md).
 
 Our canonical Git repository is located at https://go.googlesource.com/vscode-go and https://github.com/golang/vscode-go is a mirror.
 
@@ -34,7 +34,7 @@ by the Go language server ([`gopls`](https://pkg.go.dev/golang.org/x/tools/gopls
 This extension communicates with `gopls` using [vscode LSP client library](https://github.com/microsoft/vscode-languageserver-node) from [`language/goLanguageServer.ts`](https://github.com/golang/vscode-go/tree/master/src/language).
 
 For extending the language features or fixing bugs, please follow `gopls`'s
-[contribution guide](https://github.com/golang/tools/blob/master/gopls/doc/contributing.md).
+[contribution guide](https://github.com/golang/tools/blob/master/gopls/doc/Contributing.md).
 
 ### Debug Adapter (`dlv dap`)
 

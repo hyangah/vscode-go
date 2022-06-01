@@ -16,7 +16,7 @@ Use the following template to create an issue for release.
     -   [ ] Run `npm install` to make sure [`package-lock.json`](https://github.com/golang/vscode-go/blob/master/package.json) is up-to-date
     -   [ ] Update the license file (`$ tools/license.sh; mv LICENSE.prod LICENSE`)
 -   [ ] Check the [Long Tests status](https://github.com/golang/vscode-go/actions?query=workflow%3A%22Long+Tests%22)  is green. Otherwise, fix the tests, send cls for review, submit them, and repeat. 
--   [ ] Perform manual [smoke tests]( https://github.com/golang/vscode-go/blob/master/docs/smoke-test.md)
+-   [ ] Perform manual [smoke tests]( https://github.com/golang/vscode-go/wiki/SmokeTest.md)
 -   [ ] Create new version tag for X.XX.X-rc.1 at gerrit’s vscode-go [repo management page](https://go-review.googlesource.com/admin/repos/vscode-go,tags)
 -   [ ] Go to the release page https://github.com/golang/vscode-go/releases and check if the new release candidate is up. If necessary, you can manually edit the comment by clicking the “Edit” button. Don’t mutate uploaded vsix.
 -   [ ] Ask editor team and contributors to this release to test the release candidate

@@ -186,10 +186,10 @@ export class WelcomePanel {
 			<div class="Announcement">
 				<img src="${announceURI}" alt="announce" class="Announcement-image" />
 				<p>
-					New! <a href="https://github.com/golang/vscode-go/blob/master/docs/debugging.md#remote-debugging">Remote
+					New! <a href="https://github.com/golang/vscode-go/wiki/Debugging#remote-debugging">Remote
 					attach debugging</a> is now available on demand via Delve's native DAP implementation with Delve v1.7.3 or newer.
 					We plan to enable this as the default in early 2022 to enhance remote debugging with the same
-					<a href="https://github.com/golang/vscode-go/blob/master/docs/debugging.md">debugging features</a>
+					<a href="https://github.com/golang/vscode-go/wiki/Debugging">debugging features</a>
                     that are already in use for local debugging.
 				</p>
 			</div>
@@ -217,7 +217,7 @@ export class WelcomePanel {
 					<div class="Card-inner">
 						<p class="Card-title">Troubleshooting</p>
 						<p class="Card-content">Experiencing problems? Start with our
-							<a href="https://github.com/golang/vscode-go/blob/master/docs/troubleshooting.md">troubleshooting guide</a>.  </p> </div>
+							<a href="https://github.com/golang/vscode-go/wiki/Troubleshooting">troubleshooting guide</a>.  </p> </div>
 				</div>
 			</div>
 			</main>
