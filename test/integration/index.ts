@@ -23,7 +23,7 @@ export function run(): Promise<void> {
 	const testsRoot = path.resolve(__dirname, '..');
 
 	return new Promise((c, e) => {
-		glob('integration/**.test.js', { cwd: testsRoot }, (err, files) => {
+		glob('integration/goDebug.test.js', { cwd: testsRoot }, (err, files) => {
 			if (err) {
 				return e(err);
 			}

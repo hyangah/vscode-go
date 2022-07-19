@@ -137,7 +137,11 @@ const testAll = (ctx: Mocha.Context, isDlvDap: boolean, withConsole?: string) =>
 		});
 
 		// Give dlv a few seconds to start.
-		await new Promise((resolve) => setTimeout(resolve, 10_000));
+		try {
+			await new Promise((resolve) => setTimeout(resolve, 10_000));
+		} catch (e) {
+			console.log(`failed to setup remote program: ${e}`);
+		}
 		return childProcess;
 	}
 
@@ -157,7 +161,7 @@ const testAll = (ctx: Mocha.Context, isDlvDap: boolean, withConsole?: string) =>
 		// an initialized event.
 		await Promise.all([
 			new Promise<void>(async (resolve) => {
-				console.log(`Setting up attach request for ${JSON.stringify(debugConfig)}.`);
+				//console.log(`Setting up attach request for ${JSON.stringify(debugConfig)}.`);
 				const attachResult = await dc.attachRequest(debugConfig as DebugProtocol.AttachRequestArguments);
 				assert.ok(attachResult.success);
 				resolve();
@@ -226,7 +230,13 @@ const testAll = (ctx: Mocha.Context, isDlvDap: boolean, withConsole?: string) =>
 		assert.strictEqual(variablesResponse.body.variables[i].value, val);
 	}
 
-	suite('basic', () => {
+	function suiteForDlvDAP(name: string, fn: (this: Mocha.Suite) => void): Mocha.Suite | void {
+		if (isDlvDap) {
+			return suite(name, fn);
+		}
+	}
+
+	suiteForDlvDAP('basic', () => {
 		test('unknown request should produce error', async () => {
 			// fake config that will be used to initialize fixtures.
 			const config = { name: 'Launch', type: 'go', request: 'launch', program: DATA_ROOT };
@@ -241,7 +251,7 @@ const testAll = (ctx: Mocha.Context, isDlvDap: boolean, withConsole?: string) =>
 		});
 	});
 
-	suite('initialize', () => {
+	suiteForDlvDAP('initialize', () => {
 		test('should return supported features', async () => {
 			const config = { name: 'Launch', type: 'go', request: 'launch', program: DATA_ROOT };
 			await initializeDebugConfig(config);
@@ -273,7 +283,7 @@ const testAll = (ctx: Mocha.Context, isDlvDap: boolean, withConsole?: string) =>
 		});
 	});
 
-	suite('env', () => {
+	suiteForDlvDAP('env', () => {
 		let sandbox: sinon.SinonSandbox;
 
 		setup(() => {
@@ -337,7 +347,7 @@ const testAll = (ctx: Mocha.Context, isDlvDap: boolean, withConsole?: string) =>
 		});
 	});
 
-	suite('launch', () => {
+	suiteForDlvDAP('launch', () => {
 		test('should run program to the end', async () => {
 			const PROGRAM = path.join(DATA_ROOT, 'baseTest');
 
@@ -450,7 +460,7 @@ const testAll = (ctx: Mocha.Context, isDlvDap: boolean, withConsole?: string) =>
 
 		test('invalid flags are passed to dlv but should be caught by dlv', async function () {
 			if (!isDlvDap) {
-				this.skip(); // not working in dlv-dap.
+				this.skip(); // not working with legacy
 			}
 
 			// TODO(hyangah): why does it take 30sec?
@@ -545,7 +555,7 @@ const testAll = (ctx: Mocha.Context, isDlvDap: boolean, withConsole?: string) =>
 		});
 	});
 
-	suite('set current working directory', () => {
+	suiteForDlvDAP('set current working directory', () => {
 		test('should debug program with cwd set', async () => {
 			const WD = path.join(DATA_ROOT, 'cwdTest');
 			const PROGRAM = path.join(WD, 'cwdTest');
@@ -769,7 +779,7 @@ const testAll = (ctx: Mocha.Context, isDlvDap: boolean, withConsole?: string) =>
 		return { path: FILE.replace(/\\/g, '/'), line: LINE };
 	};
 
-	suite('setBreakpoints', () => {
+	suiteForDlvDAP('setBreakpoints', () => {
 		let server: number;
 		let remoteAttachDebugConfig: DebugConfiguration;
 		setup(async () => {
@@ -1020,7 +1030,7 @@ const testAll = (ctx: Mocha.Context, isDlvDap: boolean, withConsole?: string) =>
 		});
 	});
 
-	suite('conditionalBreakpoints', () => {
+	suiteForDlvDAP('conditionalBreakpoints', () => {
 		test('should stop on conditional breakpoint', async () => {
 			const PROGRAM = path.join(DATA_ROOT, 'condbp');
 			const FILE = path.join(DATA_ROOT, 'condbp', 'condbp.go');
@@ -1154,7 +1164,7 @@ const testAll = (ctx: Mocha.Context, isDlvDap: boolean, withConsole?: string) =>
 		});
 	});
 
-	suite('panicBreakpoints', () => {
+	suiteForDlvDAP('panicBreakpoints', () => {
 		test('should stop on panic', async () => {
 			const PROGRAM_WITH_EXCEPTION = path.join(DATA_ROOT, 'panic');
 
@@ -1241,7 +1251,7 @@ const testAll = (ctx: Mocha.Context, isDlvDap: boolean, withConsole?: string) =>
 		});
 	});
 
-	suite('disconnect', () => {
+	suite('disconnect (remote attach)', () => {
 		// The teardown code for the Go Debug Adapter test suite issues a disconnectRequest.
 		// In order for these tests to pass, the debug adapter must not fail if a
 		// disconnectRequest is sent after it has already disconnected.
@@ -1277,7 +1287,9 @@ const testAll = (ctx: Mocha.Context, isDlvDap: boolean, withConsole?: string) =>
 			await killProcessTree(remoteProgram);
 			await new Promise((resolve) => setTimeout(resolve, 2_000));
 		});
+	});
 
+	suiteForDlvDAP('disconnect', () => {
 		test('should disconnect while continuing on entry', async () => {
 			const PROGRAM = path.join(DATA_ROOT, 'loop');
 
@@ -1296,7 +1308,7 @@ const testAll = (ctx: Mocha.Context, isDlvDap: boolean, withConsole?: string) =>
 		});
 
 		// FIXIT: disabled due to https://github.com/golang/vscode-go/issues/1995
-		test.skip('should disconnect with multiple disconnectRequests', async () => {
+		test('should disconnect with multiple disconnectRequests', async () => {
 			const PROGRAM = path.join(DATA_ROOT, 'loop');
 
 			const config = {
@@ -1497,7 +1509,7 @@ const testAll = (ctx: Mocha.Context, isDlvDap: boolean, withConsole?: string) =>
 		});
 	});
 
-	suite('switch goroutine', () => {
+	suiteForDlvDAP('switch goroutine', () => {
 		async function continueAndFindParkedGoroutine(file: string): Promise<number> {
 			// Find a goroutine that is stopped in parked.
 			const bp = getBreakpointLocation(file, 8);
@@ -1637,7 +1649,11 @@ const testAll = (ctx: Mocha.Context, isDlvDap: boolean, withConsole?: string) =>
 		});
 	});
 
-	suite('logDest attribute tests', () => {
+	suiteForDlvDAP('logDest attribute tests', () => {
+		if (process.platform === 'win32') {
+			return;
+		}
+
 		const PROGRAM = path.join(DATA_ROOT, 'baseTest');
 
 		let tmpDir: string;
@@ -1648,10 +1664,7 @@ const testAll = (ctx: Mocha.Context, isDlvDap: boolean, withConsole?: string) =>
 			rmdirRecursive(tmpDir);
 		});
 
-		test('logs are written to logDest file', async function () {
-			if (!isDlvDap || process.platform === 'win32') {
-				this.skip();
-			}
+		test('logs are written to logDest file', async () => {
 			const DELVE_LOG = path.join(tmpDir, 'delve.log');
 			const config = {
 				name: 'Launch',
@@ -1698,12 +1711,12 @@ const testAll = (ctx: Mocha.Context, isDlvDap: boolean, withConsole?: string) =>
 			}
 		}
 		test('relative path as logDest triggers an error', async function () {
-			if (!isDlvDap || withConsole || process.platform === 'win32') this.skip();
+			if (withConsole) this.skip();
 			await testWithInvalidLogDest('delve.log', 'relative path');
 		});
 
 		test('number as logDest triggers an error', async function () {
-			if (!isDlvDap || withConsole || process.platform === 'win32') this.skip();
+			if (withConsole) this.skip();
 			await testWithInvalidLogDest(3, 'file descriptor');
 		});
 	});
@@ -1742,7 +1755,7 @@ const testAll = (ctx: Mocha.Context, isDlvDap: boolean, withConsole?: string) =>
 			return outputFile;
 		}
 
-		suite('substitutePath with missing files', () => {
+		suiteForDlvDAP('substitutePath with missing files', () => {
 			let goBuildOutput: string;
 			suiteSetup(() => {
 				goBuildOutput = fs.mkdtempSync(path.join(tmpdir(), 'output'));
