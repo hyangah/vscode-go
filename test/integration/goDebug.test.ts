@@ -82,6 +82,7 @@ const testAll = (ctx: Mocha.Context, isDlvDap: boolean, withConsole?: string) =>
 			}
 			d.dispose();
 		} else {
+			console.log(`tear-down first level: ${ctx.currentTest?.title} ${dapTraced} ${ctx.currentTest?.state}`);
 			if (ctx.currentTest?.state === 'failed' && dapTraced) {
 				console.log(`${ctx.currentTest?.title} FAILED: Debug Adapter Trace`);
 				try {
@@ -161,9 +162,13 @@ const testAll = (ctx: Mocha.Context, isDlvDap: boolean, withConsole?: string) =>
 		// an initialized event.
 		await Promise.all([
 			new Promise<void>(async (resolve) => {
-				//console.log(`Setting up attach request for ${JSON.stringify(debugConfig)}.`);
-				const attachResult = await dc.attachRequest(debugConfig as DebugProtocol.AttachRequestArguments);
-				assert.ok(attachResult.success);
+				console.log('Sending a remote-attach request.');
+				try {
+					const attachResult = await dc.attachRequest(debugConfig as DebugProtocol.AttachRequestArguments);
+					assert.ok(attachResult.success);
+				} catch (e) {
+					console.log(`failed remote-attach ${e}`);
+				}
 				resolve();
 			}),
 			dc.waitForEvent('initialized')
@@ -359,7 +364,7 @@ const testAll = (ctx: Mocha.Context, isDlvDap: boolean, withConsole?: string) =>
 				program: PROGRAM
 			};
 			const debugConfig = await initializeDebugConfig(config);
-			await Promise.all([dc.configurationSequence(), dc.launch(debugConfig), dc.waitForEvent('terminated')]);
+			await Promise.all([dc.configurationSequence(), dc.launch(debugConfig), dc.waitForEvent('terminated', 1_000)]);
 		});
 
 		test('should stop on entry', async () => {
@@ -380,7 +385,7 @@ const testAll = (ctx: Mocha.Context, isDlvDap: boolean, withConsole?: string) =>
 				// when there are no goroutines running. Which is true when it is stopped
 				// on entry. Therefore we would need another method from dc.assertStoppedLocation
 				// to check the debugger is stopped on entry.
-				dc.waitForEvent('stopped').then((event) => {
+				dc.waitForEvent('stopped', 1_000).then((event) => {
 					const stevent = event as DebugProtocol.StoppedEvent;
 					assert.strictEqual(stevent.body.reason, 'entry');
 				})
@@ -398,7 +403,7 @@ const testAll = (ctx: Mocha.Context, isDlvDap: boolean, withConsole?: string) =>
 			};
 
 			const debugConfig = await initializeDebugConfig(config);
-			await Promise.all([dc.configurationSequence(), dc.launch(debugConfig), dc.waitForEvent('terminated')]);
+			await Promise.all([dc.configurationSequence(), dc.launch(debugConfig), dc.waitForEvent('terminated', 1_000)]);
 		});
 
 		test('should debug a single test', async () => {
@@ -413,7 +418,7 @@ const testAll = (ctx: Mocha.Context, isDlvDap: boolean, withConsole?: string) =>
 			};
 
 			const debugConfig = await initializeDebugConfig(config);
-			await Promise.all([dc.configurationSequence(), dc.launch(debugConfig), dc.waitForEvent('terminated')]);
+			await Promise.all([dc.configurationSequence(), dc.launch(debugConfig), dc.waitForEvent('terminated', 1_000)]);
 		});
 
 		test('should debug a test package', async () => {
@@ -427,7 +432,7 @@ const testAll = (ctx: Mocha.Context, isDlvDap: boolean, withConsole?: string) =>
 			};
 
 			const debugConfig = await initializeDebugConfig(config);
-			await Promise.all([dc.configurationSequence(), dc.launch(debugConfig), dc.waitForEvent('terminated')]);
+			await Promise.all([dc.configurationSequence(), dc.launch(debugConfig), dc.waitForEvent('terminated', 1_000)]);
 		});
 
 		test('invalid flags are passed to dlv but should be caught by dlv (legacy)', async function () {
@@ -447,8 +452,8 @@ const testAll = (ctx: Mocha.Context, isDlvDap: boolean, withConsole?: string) =>
 			const debugConfig = await initializeDebugConfig(config);
 			await Promise.all([
 				dc.assertOutput('stderr', 'Error: unknown flag: --invalid\n', 5000),
-				dc.waitForEvent('terminated'),
-				dc.initializeRequest().then((response) => {
+				dc.waitForEvent('terminated', 1_000),
+				dc.initializeRequest().then(() => {
 					// The current debug adapter does not respond to launch request but,
 					// instead, sends error messages and TerminatedEvent as delve is closed.
 					// The promise from dc.launchRequest resolves when the launch response
@@ -495,7 +500,7 @@ const testAll = (ctx: Mocha.Context, isDlvDap: boolean, withConsole?: string) =>
 				logOutput: 'dap'
 			};
 			const debugConfig = await initializeDebugConfig(config, true);
-			await Promise.all([dc.configurationSequence(), dc.launch(debugConfig), dc.waitForEvent('terminated')]);
+			await Promise.all([dc.configurationSequence(), dc.launch(debugConfig), dc.waitForEvent('terminated', 1_000)]);
 		});
 
 		test('should handle threads request after initialization', async () => {
@@ -516,7 +521,7 @@ const testAll = (ctx: Mocha.Context, isDlvDap: boolean, withConsole?: string) =>
 					});
 				}),
 				dc.launch(debugConfig),
-				dc.waitForEvent('terminated')
+				dc.waitForEvent('terminated', 1_000)
 			]);
 		});
 
@@ -551,7 +556,7 @@ const testAll = (ctx: Mocha.Context, isDlvDap: boolean, withConsole?: string) =>
 			};
 			const debugConfig = await initializeDebugConfig(config);
 
-			await Promise.all([dc.configurationSequence(), dc.launch(debugConfig), dc.waitForEvent('terminated')]);
+			await Promise.all([dc.configurationSequence(), dc.launch(debugConfig), dc.waitForEvent('terminated', 1_000)]);
 		});
 	});
 
@@ -733,6 +738,7 @@ const testAll = (ctx: Mocha.Context, isDlvDap: boolean, withConsole?: string) =>
 		});
 
 		teardown(async () => {
+			console.log(`tear-down second level: ${ctx.currentTest?.title} ${dapTraced} ${ctx.currentTest?.state}`);
 			await dc.stop();
 			await killProcessTree(childProcess);
 			// Wait 2 seconds for the process to be killed.
@@ -768,7 +774,7 @@ const testAll = (ctx: Mocha.Context, isDlvDap: boolean, withConsole?: string) =>
 
 			killProcess(childProcess);
 
-			await dc.waitForEvent('terminated');
+			await dc.waitForEvent('terminated', 1_000);
 		});
 	});
 
@@ -1047,7 +1053,7 @@ const testAll = (ctx: Mocha.Context, isDlvDap: boolean, withConsole?: string) =>
 			const debugConfig = await initializeDebugConfig(config);
 			await Promise.all([
 				dc
-					.waitForEvent('initialized')
+					.waitForEvent('initialized', 1_000)
 					.then(() => {
 						return dc.setBreakpointsRequest({
 							lines: [location.line],
@@ -1123,7 +1129,7 @@ const testAll = (ctx: Mocha.Context, isDlvDap: boolean, withConsole?: string) =>
 			const debugConfig = await initializeDebugConfig(config);
 			await Promise.all([
 				dc
-					.waitForEvent('initialized')
+					.waitForEvent('initialized', 1_000)
 					.then(async () => {
 						return dc.setBreakpointsRequest({
 							lines: [location.line],
@@ -1179,11 +1185,11 @@ const testAll = (ctx: Mocha.Context, isDlvDap: boolean, withConsole?: string) =>
 			await Promise.all([
 				dc.configurationSequence(),
 				dc.launch(debugConfig),
-				dc.waitForEvent('stopped').then((event) => {
+				dc.waitForEvent('stopped', 1_000).then((event) => {
 					assert(
 						event.body.reason === 'runtime error' ||
-							event.body.reason === 'panic' ||
-							event.body.reason === 'exception'
+						event.body.reason === 'panic' ||
+						event.body.reason === 'exception'
 					);
 				})
 			]);
@@ -1208,11 +1214,11 @@ const testAll = (ctx: Mocha.Context, isDlvDap: boolean, withConsole?: string) =>
 			await Promise.all([
 				dc.configurationSequence(),
 				dc.launch(debugConfig),
-				dc.waitForEvent('stopped').then((event) => {
+				dc.waitForEvent('stopped', 1_000).then((event) => {
 					assert(
 						event.body.reason === 'runtime error' ||
-							event.body.reason === 'panic' ||
-							event.body.reason === 'exception'
+						event.body.reason === 'panic' ||
+						event.body.reason === 'exception'
 					);
 				})
 			]);
@@ -1240,11 +1246,11 @@ const testAll = (ctx: Mocha.Context, isDlvDap: boolean, withConsole?: string) =>
 			await dc.hitBreakpoint(debugConfig, getBreakpointLocation(FILE, BREAKPOINT_LINE));
 			await Promise.all([
 				dc.nextRequest({ threadId: 1 }),
-				dc.waitForEvent('stopped').then((event) => {
+				dc.waitForEvent('stopped', 1_000).then((event) => {
 					assert(
 						event.body.reason === 'runtime error' ||
-							event.body.reason === 'panic' ||
-							event.body.reason === 'exception'
+						event.body.reason === 'panic' ||
+						event.body.reason === 'exception'
 					);
 				})
 			]);
@@ -1304,7 +1310,7 @@ const testAll = (ctx: Mocha.Context, isDlvDap: boolean, withConsole?: string) =>
 			const debugConfig = await initializeDebugConfig(config);
 			await Promise.all([dc.configurationSequence(), dc.launch(debugConfig)]);
 
-			await Promise.all([dc.disconnectRequest({ restart: false }), dc.waitForEvent('terminated')]);
+			await Promise.all([dc.disconnectRequest({ restart: false }), dc.waitForEvent('terminated', 1_000)]);
 		});
 
 		// FIXIT: disabled due to https://github.com/golang/vscode-go/issues/1995
@@ -1329,7 +1335,7 @@ const testAll = (ctx: Mocha.Context, isDlvDap: boolean, withConsole?: string) =>
 					dc.disconnectRequest({ restart: false });
 					resolve();
 				}),
-				dc.waitForEvent('terminated')
+				dc.waitForEvent('terminated', 1_000)
 			]);
 		});
 
@@ -1350,7 +1356,7 @@ const testAll = (ctx: Mocha.Context, isDlvDap: boolean, withConsole?: string) =>
 			const continueResponse = await dc.continueRequest({ threadId: 1 });
 			assert.ok(continueResponse.success);
 
-			await Promise.all([dc.disconnectRequest({ restart: false }), dc.waitForEvent('terminated')]);
+			await Promise.all([dc.disconnectRequest({ restart: false }), dc.waitForEvent('terminated', 1_000)]);
 		});
 
 		test('should disconnect while nexting', async () => {
@@ -1373,7 +1379,7 @@ const testAll = (ctx: Mocha.Context, isDlvDap: boolean, withConsole?: string) =>
 			const nextResponse = await dc.nextRequest({ threadId: 1 });
 			assert.ok(nextResponse.success);
 
-			await Promise.all([dc.disconnectRequest({ restart: false }), dc.waitForEvent('terminated')]);
+			await Promise.all([dc.disconnectRequest({ restart: false }), dc.waitForEvent('terminated', 1_000)]);
 		});
 
 		test('should disconnect while paused on pause', async () => {
@@ -1393,7 +1399,7 @@ const testAll = (ctx: Mocha.Context, isDlvDap: boolean, withConsole?: string) =>
 			const pauseResponse = await dc.pauseRequest({ threadId: 1 });
 			assert.ok(pauseResponse.success);
 
-			await Promise.all([dc.disconnectRequest({ restart: false }), dc.waitForEvent('terminated')]);
+			await Promise.all([dc.disconnectRequest({ restart: false }), dc.waitForEvent('terminated', 1_000)]);
 		});
 
 		test('should disconnect while paused on breakpoint', async () => {
@@ -1412,7 +1418,7 @@ const testAll = (ctx: Mocha.Context, isDlvDap: boolean, withConsole?: string) =>
 
 			await dc.hitBreakpoint(debugConfig, getBreakpointLocation(FILE, BREAKPOINT_LINE));
 
-			await Promise.all([dc.disconnectRequest({ restart: false }), dc.waitForEvent('terminated')]);
+			await Promise.all([dc.disconnectRequest({ restart: false }), dc.waitForEvent('terminated'), 1_000]);
 		});
 
 		test('should disconnect while paused on entry', async () => {
@@ -1430,7 +1436,7 @@ const testAll = (ctx: Mocha.Context, isDlvDap: boolean, withConsole?: string) =>
 
 			await Promise.all([dc.configurationSequence(), dc.launch(debugConfig)]);
 
-			await Promise.all([dc.disconnectRequest({ restart: false }), dc.waitForEvent('terminated')]);
+			await Promise.all([dc.disconnectRequest({ restart: false }), dc.waitForEvent('terminated', 1_000)]);
 		});
 
 		test('should disconnect while paused on next', async () => {
@@ -1451,7 +1457,7 @@ const testAll = (ctx: Mocha.Context, isDlvDap: boolean, withConsole?: string) =>
 			const nextResponse = await dc.nextRequest({ threadId: 1 });
 			assert.ok(nextResponse.success);
 
-			await Promise.all([dc.disconnectRequest({ restart: false }), dc.waitForEvent('terminated')]);
+			await Promise.all([dc.disconnectRequest({ restart: false }), dc.waitForEvent('terminated', 1_000)]);
 		});
 
 		// This test is flaky. It has been updated to run stat multiple
@@ -1520,13 +1526,13 @@ const testAll = (ctx: Mocha.Context, isDlvDap: boolean, withConsole?: string) =>
 				const res = await Promise.all([
 					dc.continueRequest({ threadId: 1 }),
 					Promise.race([
-						dc.waitForEvent('stopped'),
+						dc.waitForEvent('stopped', 1_000),
 						// It is very unlikely to happen. But in theory if all sayhi
 						// goroutines are run serially, there will never be a second parked
 						// sayhi goroutine when another breaks and we will keep trying
 						// until process termination. If the process terminates, mark the test
 						// as done.
-						dc.waitForEvent('terminated')
+						dc.waitForEvent('terminated', 1_000)
 					])
 				]);
 				const event = res[1];
@@ -1578,7 +1584,7 @@ const testAll = (ctx: Mocha.Context, isDlvDap: boolean, withConsole?: string) =>
 			};
 			const debugConfig = await initializeDebugConfig(config);
 
-			await Promise.all([dc.configurationSequence(), dc.launch(debugConfig), dc.waitForEvent('stopped')]);
+			await Promise.all([dc.configurationSequence(), dc.launch(debugConfig), dc.waitForEvent('stopped', 1_000)]);
 
 			const parkedGoid = await continueAndFindParkedGoroutine(FILE);
 
@@ -1676,7 +1682,7 @@ const testAll = (ctx: Mocha.Context, isDlvDap: boolean, withConsole?: string) =>
 			};
 
 			const debugConfig = await initializeDebugConfig(config);
-			await Promise.all([dc.configurationSequence(), dc.launch(debugConfig), dc.waitForEvent('terminated')]);
+			await Promise.all([dc.configurationSequence(), dc.launch(debugConfig), dc.waitForEvent('terminated', 1_000)]);
 			await dc.stop();
 			dc = undefined!;
 			const dapLog = fs.readFileSync(DELVE_LOG)?.toString();
@@ -1686,8 +1692,8 @@ const testAll = (ctx: Mocha.Context, isDlvDap: boolean, withConsole?: string) =>
 					: 'DAP server listening at';
 			assert(
 				dapLog.includes(preamble) &&
-					dapLog.includes('"command":"initialize"') &&
-					dapLog.includes('"event":"terminated"'),
+				dapLog.includes('"command":"initialize"') &&
+				dapLog.includes('"event":"terminated"'),
 				dapLog
 			);
 		});
