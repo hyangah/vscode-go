@@ -1228,6 +1228,7 @@ encountered.
 
 	test('Test Completion on unimported packages (multiple)', async function () {
 		if (affectedByIssue832()) {
+			console.log('affected by issue 832');
 			this.skip();
 		}
 		const config = Object.create(getGoConfig(), {
