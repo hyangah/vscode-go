@@ -452,6 +452,11 @@ Default:
 	"tags" :	"",
 }
 ```
+### `go.showWelcome`
+
+Specifies whether to show the Welcome experience on first install
+
+Default: `true`
 ### `go.survey.prompt`
 
 Prompt for surveys, including the gopls survey and the Go developer survey.
