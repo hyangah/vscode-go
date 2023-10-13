@@ -6,14 +6,11 @@
 
 'use strict';
 
-import cp = require('child_process');
 import moment = require('moment');
-import path = require('path');
 import semver = require('semver');
-import util = require('util');
 import { getFormatTool, usingCustomFormatTool } from './language/legacy/goFormat';
 import { allToolsInformation } from './goToolsInformation';
-import { getBinPath, GoVersion } from './util';
+import { GoVersion } from './util';
 
 export interface Tool {
 	name: string;
@@ -190,21 +187,3 @@ export function goplsStaticcheckEnabled(
 	}
 	return true;
 }
-
-export const gocodeClose = async (env: NodeJS.Dict<string>): Promise<string> => {
-	const toolBinPath = getBinPath('gocode');
-	if (!path.isAbsolute(toolBinPath)) {
-		return '';
-	}
-	try {
-		const execFile = util.promisify(cp.execFile);
-		const { stderr } = await execFile(toolBinPath, ['close'], { env, timeout: 10000 }); // give 10sec.
-		if (stderr.indexOf("rpc: can't find service Server.") > -1) {
-			return 'Installing gocode aborted as existing process cannot be closed. Please kill the running process for gocode and try again.';
-		}
-	} catch (err) {
-		// This may fail if gocode isn't already running.
-		console.log(`gocode close failed: ${err}`);
-	}
-	return '';
-};
