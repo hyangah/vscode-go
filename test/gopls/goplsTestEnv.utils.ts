@@ -14,8 +14,6 @@ import {
 	buildLanguageClient,
 	BuildLanguageClientOption,
 	buildLanguageServerConfig,
-	LanguageServerConfig,
-	ServerInfo,
 	toServerInfo
 } from '../../src/language/goLanguageServer';
 import { GoExtensionContext } from '../../src/context';
@@ -97,7 +95,8 @@ export class Env {
 	}
 
 	// Start the language server with the fakeOutputChannel.
-	public async startGopls(filePath: string, goConfig?: vscode.WorkspaceConfiguration) {
+	// if workspaceFolder is provided, gopls will start with it.
+	public async startGopls(filePath: string, goConfig?: vscode.WorkspaceConfiguration, workspaceFolder?: string) {
 		// file path to open.
 		this.fakeOutputChannel = new FakeOutputChannel();
 		const pkgLoadingDone = this.onMessageInTrace('Finished loading packages.', 60000);
@@ -114,6 +113,13 @@ export class Env {
 		cfg.outputChannel = this.fakeOutputChannel; // inject our fake output channel.
 		this.goCtx.latestConfig = cfg;
 		this.languageClient = await buildLanguageClient(this.goCtx, cfg);
+		if (workspaceFolder) {
+			this.languageClient.clientOptions.workspaceFolder = {
+				uri: vscode.Uri.file(workspaceFolder),
+				index: 0,
+				name: path.basename(workspaceFolder)
+			};
+		}
 		if (!this.languageClient) {
 			throw new Error('Language client not initialized.');
 		}
