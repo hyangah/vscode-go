@@ -6,6 +6,9 @@ jobs:
   build:
     name: ${{ matrix.os }} ${{ matrix.version }} ${{ matrix.go }}
     runs-on: ${{ matrix.os }}
+    defaults:
+	  run:
+		working-directory: ./extension
 
     # Not containing 'SKIP CI' in the commit message AND
     # (Either the official repository, or the commit message contains 'FORCE RUN CI')

@@ -8,6 +8,9 @@ jobs:
   build:
     name: ${{ matrix.os }} ${{ matrix.version }} ${{ matrix.go }}
     runs-on: ${{ matrix.os }}
+    defaults:
+	  run:
+		working-directory: ./extension
 
     # Only in the official repository.
     if: github.repository == 'golang/vscode-go'
@@ -45,7 +48,7 @@ jobs:
       - name: Install Go tools (Modules mode)
         run: |
             go version
-            go run ./tools/installtools/main.go
+            go run ./tools/installtools/main.Go
         env:
           GO111MODULE: on
           EXT: "${{ matrix.os == 'windows-latest' && '.exe' || ''}}"

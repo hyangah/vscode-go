@@ -6,6 +6,9 @@ jobs:
   build:
     name: ${{ matrix.os }} ${{ matrix.version }}
     runs-on: ${{ matrix.os }}
+    defaults:
+	  run:
+		working-directory: ./extension
     
     # Not containing 'SKIP CI' in the commit message AND
     # (Either non-Windows OR triggered on 'push' (if triggered by 'pull_request', github.base_ref is not empty)
