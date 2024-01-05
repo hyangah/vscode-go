@@ -41,7 +41,6 @@ go_binaries_info() {
 
 run_doc_test() {
   df -h | grep shm
-
   echo "**** Run settings generator ****"
   go run ./tools/generate.go -w=false -gopls=true
 

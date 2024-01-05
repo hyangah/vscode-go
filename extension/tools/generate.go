@@ -28,7 +28,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/golang/vscode-go/tools/goplssetting"
+	"github.com/golang/vscode-go/extension/tools/goplssetting"
 )
 
 var (
