@@ -61,6 +61,7 @@ func main() {
 	if ver < 21 {
 		exitf("unsupported go version: 1.%v", ver)
 	}
+	fmt.Printf("installing tools for go1.%d...\n", ver)
 
 	bin, err := goBin()
 	if err != nil {
@@ -80,7 +81,7 @@ func exitf(format string, args ...interface{}) {
 // goVersion returns an integer N if go's version is 1.N.
 func goVersion() (int, error) {
 	cmd := exec.Command("go", "list", "-e", "-f", `{{context.ReleaseTags}}`, "--", "unsafe")
-	cmd.Env = append(os.Environ(), "GO111MODULE=off")
+	cmd.Env = append(os.Environ(), "GO111MODULE=off", "GOTOOLCHAIN=local")
 	out, err := cmd.Output()
 	if err != nil {
 		return 0, fmt.Errorf("go list error: %v", err)
@@ -106,7 +107,9 @@ func goBin() (string, error) {
 	if gobin := os.Getenv("GOBIN"); gobin != "" {
 		return gobin, nil
 	}
-	out, err := exec.Command("go", "env", "GOPATH").Output()
+	cmd := exec.Command("go", "env", "GOPATH")
+	cmd.Env = append(os.Environ(), "GOTOOLCHAIN=local")
+	out, err := cmd.Output()
 	if err != nil {
 		return "", err
 	}
@@ -119,21 +122,13 @@ func goBin() (string, error) {
 
 func installTools(binDir string, goMinorVersion int) error {
 	installCmd := "install"
-	if goMinorVersion < 16 {
-		installCmd = "get"
-	}
 
-	dir := ""
-	if installCmd == "get" { // run `go get` command from an empty directory.
-		dir = os.TempDir()
-	}
-	env := append(os.Environ(), "GO111MODULE=on")
+	env := append(os.Environ(), "GO111MODULE=on", "GOTOOLCHAIN=auto")
 	for _, tool := range tools {
 		ver := pickVersion(goMinorVersion, tool.versions, pickLatest(tool.path, tool.preferPreview))
 		path := tool.path + "@" + ver
 		cmd := exec.Command("go", installCmd, path)
 		cmd.Env = env
-		cmd.Dir = dir
 		fmt.Println("go", installCmd, path)
 		if out, err := cmd.CombinedOutput(); err != nil {
 			return fmt.Errorf("installing %v: %s\n%v", path, out, err)
