@@ -8,7 +8,7 @@
 
 import moment = require('moment');
 import semver = require('semver');
-import { getFormatTool, usingCustomFormatTool } from './language/legacy/goFormat';
+import { getFormatTool } from './language/legacy/goFormat';
 import { allToolsInformation } from './goToolsInformation';
 import { GoVersion } from './util';
 
@@ -17,7 +17,6 @@ export interface Tool {
 	importPath: string;
 	modulePath: string;
 	isImportant: boolean;
-	replacedByGopls?: boolean;
 	description: string;
 
 	// If true, consider prerelease version in prerelease mode
@@ -121,9 +120,7 @@ export function getConfiguredTools(goConfig: { [key: string]: any }, goplsConfig
 	function maybeAddTool(name: string) {
 		const tool = allToolsInformation[name];
 		if (tool) {
-			if (!useLanguageServer || !tool.replacedByGopls) {
-				tools.push(tool);
-			}
+			tools.push(tool);
 		}
 	}
 
@@ -144,25 +141,21 @@ export function getConfiguredTools(goConfig: { [key: string]: any }, goplsConfig
 		maybeAddTool('dlv');
 	}
 
-	// Only add format tools if the language server is disabled or the
-	// format tool is known to us.
-	if (!useLanguageServer || usingCustomFormatTool(goConfig)) {
+	// Only add format tools if the language server is disabled.
+	if (!useLanguageServer) {
 		maybeAddTool(getFormatTool(goConfig));
 	}
 
 	// Add the linter that was chosen by the user, but don't add staticcheck
 	// if it is enabled via gopls.
-	const goplsStaticheckEnabled = useLanguageServer && goplsStaticcheckEnabled(goConfig, goplsConfig);
+	const goplsStaticheckEnabled = useLanguageServer && goplsStaticcheckEnabled(goplsConfig);
 	if (goConfig['lintTool'] !== 'staticcheck' || !goplsStaticheckEnabled) {
 		maybeAddTool(goConfig['lintTool']);
 	}
 	return tools;
 }
 
-export function goplsStaticcheckEnabled(
-	goConfig: { [key: string]: any },
-	goplsConfig: { [key: string]: any }
-): boolean {
+export function goplsStaticcheckEnabled(goplsConfig: { [key: string]: any }): boolean {
 	if (
 		goplsConfig['ui.diagnostic.staticcheck'] === false ||
 		(goplsConfig['ui.diagnostic.staticcheck'] === undefined && goplsConfig['staticcheck'] !== true)

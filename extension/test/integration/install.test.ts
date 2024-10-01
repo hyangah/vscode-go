@@ -352,11 +352,31 @@ suite('getConfiguredTools', () => {
 		const got = configured.map((tool) => tool.name) ?? [];
 		assert(got.includes('gopls'), `omitted 'gopls': ${JSON.stringify(got)}`);
 	});
-
 	test('do not require gopls when not using language server', async () => {
 		const configured = getConfiguredTools({ useLanguageServer: false }, {});
 		const got = configured.map((tool) => tool.name) ?? [];
 		assert(!got.includes('gopls'), `suggested 'gopls': ${JSON.stringify(got)}`);
+	});
+	const hasFormatter = (got: string[]) => {
+		const formatter = got.filter((tool) =>
+			['goimports', 'gofmt', 'gofumpt', 'gofumports', 'goreturns'].includes(tool)
+		);
+		return formatter?.length > 0;
+	};
+	test('do not require a known formatter when using language server', async () => {
+		const configured = getConfiguredTools({ useLanguageServer: true, formatTool: 'default' }, {});
+		const got = configured.map((tool) => tool.name) ?? [];
+		assert(!hasFormatter(got), `suggested formatter: ${JSON.stringify(got)}`);
+	});
+	test('require a known formatter when not using language server', async () => {
+		const configured = getConfiguredTools({ useLanguageServer: false, formatTool: 'default' }, {});
+		const got = configured.map((tool) => tool.name) ?? [];
+		assert(hasFormatter(got), `omitted formatter: ${JSON.stringify(got)}`);
+	});
+	test('require a linter', async () => {
+		const configured = getConfiguredTools({ useLanguageServer: true, lintTool: 'staticcheck' }, {});
+		const got = configured.map((tool) => tool.name) ?? [];
+		assert(got.includes('staticcheck'), `omitted 'staticcheck': ${JSON.stringify(got)}`);
 	});
 });
 
