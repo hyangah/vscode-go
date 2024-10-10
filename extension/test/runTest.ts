@@ -5,6 +5,9 @@ import { SilentReporter, runTests } from '@vscode/test-electron';
 
 async function main() {
 	process.env['DBUS_SESSION_BUS_ADDRESS'] = '';
+	// Use the local toolchain by default
+	// instead of getting affected by the extension/go.mod go or toolchain directives.
+	process.env['GOTOOLCHAIN'] = 'local';
 
 	// We are in test mode.
 	process.env['VSCODE_GO_IN_TEST'] = '1';
