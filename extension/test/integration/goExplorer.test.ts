@@ -39,9 +39,9 @@ suite('GoExplorerProvider', () => {
 		const [env] = await explorer.getChildren()!;
 		const items = (await explorer.getChildren(env)) as { key: string; value: string }[];
 		const goenv = items.find((item) => item.key === 'GOENV');
-		assert(goenv, 'missing GOENV');
+		assert(goenv, `missing GOENV: ${JSON.stringify(items)}`);
 		const gomod = items.find((item) => item.key === 'GOMOD');
-		assert(gomod, 'missing GOMOD');
+		assert(gomod, `missing GOMOD: ${JSON.stringify(items)}`);
 		// There can be extra env var items if they are set during test.
 		assert.strictEqual(resolveHomeDir(gomod.value), path.join(fixtureDir, 'go.mod'));
 	});

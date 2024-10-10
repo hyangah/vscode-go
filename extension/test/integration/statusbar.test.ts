@@ -29,12 +29,14 @@ import ourutil = require('../../src/util');
 import { setGOROOTEnvVar } from '../../src/goEnv';
 
 describe('#initGoStatusBar()', function () {
+	const origEnv = Object.assign({}, process.env);
 	this.beforeAll(async () => {
 		await updateGoVarsFromConfig({}); // should initialize the status bar.
 	});
 
 	this.afterAll(() => {
 		disposeGoStatusBar();
+		process.env = origEnv;
 	});
 
 	it('should create a status bar item', () => {

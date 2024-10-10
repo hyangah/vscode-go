@@ -22,6 +22,9 @@ suite('Coverage for tests', function () {
 	let fixtureSourcePath: string;
 	let coverFilePath: string;
 
+	// updateGoVarsFromConfig mutates process.env. Restore to origEnv in suiteTeardown.
+	// TODO: avoid updateGoVarsFromConfig.
+	const origEnv = Object.assign({}, process.env);
 	suiteSetup(async () => {
 		await updateGoVarsFromConfig({});
 
@@ -29,6 +32,9 @@ suite('Coverage for tests', function () {
 		fixtureSourcePath = path.join(__dirname, '..', '..', '..', 'test', 'testdata', 'coverage');
 		coverFilePath = path.join(fixtureSourcePath, 'cover.out');
 		return;
+	});
+	suiteTeardown(() => {
+		process.env = origEnv;
 	});
 	test('resolve import paths', async () => {
 		initForTest();

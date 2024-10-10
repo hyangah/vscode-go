@@ -27,6 +27,7 @@ suite('Code lenses for testing and benchmarking', function () {
 
 	const projectDir = path.join(__dirname, '..', '..', '..');
 	const testdataDir = path.join(projectDir, 'test', 'testdata', 'codelens');
+	const origEnv = Object.assign({}, process.env);
 	const env = new Env();
 
 	this.afterEach(function () {
@@ -47,6 +48,7 @@ suite('Code lenses for testing and benchmarking', function () {
 
 	suiteTeardown(async () => {
 		await env.teardown();
+		process.env = origEnv;
 	});
 
 	test('Subtests - runs a test with cursor on t.Run line', async () => {

@@ -23,6 +23,9 @@ suite('Debug Environment Variable Merge Test', () => {
 	const fixtureSourcePath = path.join(__dirname, '..', '..', '..', 'test', 'testdata');
 	const filePath = path.join(fixtureSourcePath, 'baseTest', 'test.go');
 
+	// updateGoVarsFromConfig mutates process.env. Restore the original in suiteTeardown.
+	// TODO: avoid updateGoVarsFromConfig.
+	const origEnv = Object.assign({}, process.env);
 	suiteSetup(async () => {
 		await goInstallTools.updateGoVarsFromConfig({});
 		await vscode.workspace.openTextDocument(vscode.Uri.file(filePath));
@@ -30,6 +33,7 @@ suite('Debug Environment Variable Merge Test', () => {
 
 	suiteTeardown(() => {
 		vscode.commands.executeCommand('workbench.action.closeActiveEditor');
+		process.env = origEnv;
 	});
 
 	let sandbox: sinon.SinonSandbox;
@@ -1018,7 +1022,8 @@ suite('Debug Configuration Infers Default Mode Property', () => {
 			name: 'Attach',
 			type: 'go',
 			request: 'attach',
-			program: '/path/to/main.go'
+			program: '/path/to/main.go',
+			processId: 12345 // bogus processId to prevent triggering process picker
 		};
 
 		debugConfigProvider.resolveDebugConfiguration(undefined, config);
